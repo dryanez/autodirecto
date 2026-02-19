@@ -152,7 +152,7 @@ export default function CatalogoPage() {
                         </select>
                     </div>
 
-                    <div className="vehicles-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                    <div className="vehicles-grid">
                         {filteredVehicles.map(vehicle => (
                             <VehicleCard key={vehicle.id} vehicle={vehicle} />
                         ))}

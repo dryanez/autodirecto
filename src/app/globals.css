@@ -101,7 +101,12 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.2;
@@ -131,7 +136,9 @@ button {
   outline: none;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: var(--font-body);
   outline: none;
 }
@@ -339,6 +346,7 @@ textarea.input-field {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -346,8 +354,13 @@ textarea.input-field {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInLeft {
@@ -355,6 +368,7 @@ textarea.input-field {
     opacity: 0;
     transform: translateX(-30px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -362,18 +376,37 @@ textarea.input-field {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-fade-in-up {
@@ -628,15 +661,15 @@ textarea.input-field {
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
   z-index: 0;
 }
 
 .hero-grid-pattern {
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
@@ -1076,7 +1109,7 @@ textarea.input-field {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.1), transparent 60%);
+  background: radial-gradient(ellipse at 30% 50%, rgba(255, 255, 255, 0.1), transparent 60%);
 }
 
 .cta-banner h2 {
@@ -1100,7 +1133,7 @@ textarea.input-field {
 
 .cta-banner .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 /* --- Catalog Filters --- */
@@ -1339,6 +1372,22 @@ textarea.input-field {
   max-width: 800px;
   margin: 0 auto;
 }
+
+.cotizacion-embed {
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+}
+
+.cotizacion-embed iframe {
+  display: block;
+  width: 100%;
+  min-height: 800px;
+}
+
 
 .form-grid {
   display: grid;
@@ -1585,35 +1634,35 @@ textarea.input-field {
   .vehicles-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .value-props {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .testimonials-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .footer-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .catalog-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .catalog-sidebar {
     position: static;
   }
-  
+
   .detail-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .detail-info {
     position: static;
   }
-  
+
   .blog-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1623,111 +1672,142 @@ textarea.input-field {
   .navbar-links {
     display: none;
   }
-  
+
   .navbar-cta .btn-primary {
     display: none;
   }
-  
+
   .hamburger {
     display: flex;
   }
-  
+
   .hero h1 {
     font-size: 2.5rem;
   }
-  
+
   .hero p {
     font-size: 1.05rem;
   }
-  
+
   .hero-stats {
     gap: var(--space-xl);
   }
-  
+
   .hero-stat-number {
     font-size: 1.75rem;
   }
-  
+
   .hero-buttons {
     flex-direction: column;
   }
-  
+
   .search-bar {
     flex-direction: column;
   }
-  
+
   .search-bar button {
     width: 100%;
   }
-  
+
   .vehicles-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .value-props {
     grid-template-columns: 1fr;
   }
-  
+
   .steps-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .steps-grid::before {
     display: none;
   }
-  
+
   .testimonials-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .section-title {
     font-size: 2rem;
   }
-  
+
   .cta-banner {
     padding: var(--space-2xl);
   }
-  
+
   .cta-banner h2 {
     font-size: 1.75rem;
   }
-  
+
   .footer-grid {
     grid-template-columns: 1fr;
     gap: var(--space-xl);
   }
-  
+
   .footer-bottom {
     flex-direction: column;
     gap: var(--space-md);
     text-align: center;
   }
-  
+
   .about-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .contact-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .benefits-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .page-header h1 {
     font-size: 2.25rem;
   }
-  
+
   .blog-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .detail-gallery img {
-    height: 280px;
+  }
+}
+
+/* --- Mobile Catalog Optimization (Scroll Snap) --- */
+@media (max-width: 768px) {
+  .catalog-layout .vehicles-grid {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--navbar-height) - 140px); /* Adjust for header/filters */
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    gap: var(--space-md);
+    padding-bottom: var(--space-4xl); /* Space for bottom nav or just breathing room */
+  }
+
+  .catalog-layout .vehicle-card {
+    flex: 0 0 100%; /* Take full height of container */
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .catalog-layout .vehicle-card-image {
+    height: 65%; /* Make image dominant */
+  }
+
+  .catalog-layout .vehicle-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 }

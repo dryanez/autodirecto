@@ -1,27 +1,11 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
 
+export const metadata = {
+    title: 'Consignación — Vende tu Auto Sin Complicaciones',
+    description: 'Cotiza y vende tu auto con Auto Directo. Ingresa tu patente y obtén una cotización instantánea. Servicio 100% online desde Viña del Mar.',
+};
+
 export default function ConsignacionPage() {
-    const [formData, setFormData] = useState({
-        name: '', email: '', phone: '',
-        brand: '', model: '', year: '', mileage: '',
-        message: '',
-    });
-    const [submitted, setSubmitted] = useState(false);
-
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // In production, this would send to Supabase
-        console.log('Form submitted:', formData);
-        setSubmitted(true);
-    };
-
     return (
         <>
             {/* Hero */}
@@ -88,8 +72,8 @@ export default function ConsignacionPage() {
                     <div className="steps-grid">
                         <div className="step-card">
                             <div className="step-number">1</div>
-                            <h3>Envía tus Datos</h3>
-                            <p>Completa el formulario con la información de tu vehículo. Es rápido y sin compromiso.</p>
+                            <h3>Cotiza tu Auto</h3>
+                            <p>Ingresa tu patente y obtén una cotización instantánea con nuestro sistema inteligente.</p>
                         </div>
                         <div className="step-card">
                             <div className="step-number">2</div>
@@ -105,84 +89,35 @@ export default function ConsignacionPage() {
                 </div>
             </section>
 
-            {/* Form */}
+            {/* Embedded Cotización App */}
             <section className="section">
                 <div className="container">
                     <h2 className="section-title">
                         Cotiza tu Auto <span className="gradient-text">Gratis</span>
                     </h2>
                     <p className="section-subtitle">
-                        Completa el formulario y te contactaremos en menos de 24 horas.
+                        Ingresa tu patente y obtén una cotización instantánea. Sin compromiso.
                     </p>
 
-                    {submitted ? (
-                        <div className="consignacion-form-section" style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '4rem', marginBottom: 'var(--space-lg)' }}>✅</div>
-                            <h3 style={{ fontSize: '1.5rem', marginBottom: 'var(--space-md)' }}>¡Solicitud Enviada!</h3>
-                            <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xl)' }}>
-                                Nuestro equipo revisará la información de tu vehículo y te contactará
-                                en las próximas 24 horas por WhatsApp o email.
-                            </p>
-                            <Link href="/" className="btn btn-primary">Volver al Inicio</Link>
-                        </div>
-                    ) : (
-                        <form className="consignacion-form-section" onSubmit={handleSubmit}>
-                            <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--space-xl)' }}>
-                                📋 Información de tu Vehículo
-                            </h3>
-                            <div className="form-grid">
-                                <div className="input-group">
-                                    <label htmlFor="brand">Marca *</label>
-                                    <input id="brand" name="brand" className="input-field" placeholder="Ej: Toyota" required value={formData.brand} onChange={handleChange} />
-                                </div>
-                                <div className="input-group">
-                                    <label htmlFor="model">Modelo *</label>
-                                    <input id="model" name="model" className="input-field" placeholder="Ej: Corolla Cross" required value={formData.model} onChange={handleChange} />
-                                </div>
-                                <div className="input-group">
-                                    <label htmlFor="year">Año *</label>
-                                    <input id="year" name="year" type="number" className="input-field" placeholder="Ej: 2023" required value={formData.year} onChange={handleChange} />
-                                </div>
-                                <div className="input-group">
-                                    <label htmlFor="mileage">Kilometraje</label>
-                                    <input id="mileage" name="mileage" type="number" className="input-field" placeholder="Ej: 25000" value={formData.mileage} onChange={handleChange} />
-                                </div>
-                            </div>
-
-                            <h3 style={{ fontSize: '1.25rem', margin: 'var(--space-2xl) 0 var(--space-xl)' }}>
-                                👤 Tus Datos de Contacto
-                            </h3>
-                            <div className="form-grid">
-                                <div className="input-group">
-                                    <label htmlFor="name">Nombre completo *</label>
-                                    <input id="name" name="name" className="input-field" placeholder="Tu nombre" required value={formData.name} onChange={handleChange} />
-                                </div>
-                                <div className="input-group">
-                                    <label htmlFor="phone">Teléfono / WhatsApp *</label>
-                                    <input id="phone" name="phone" type="tel" className="input-field" placeholder="+56 9 XXXX XXXX" required value={formData.phone} onChange={handleChange} />
-                                </div>
-                                <div className="input-group form-full">
-                                    <label htmlFor="email">Email</label>
-                                    <input id="email" name="email" type="email" className="input-field" placeholder="tu@email.com" value={formData.email} onChange={handleChange} />
-                                </div>
-                                <div className="input-group form-full">
-                                    <label htmlFor="message">Comentarios adicionales</label>
-                                    <textarea id="message" name="message" className="input-field" placeholder="Cualquier detalle adicional sobre tu vehículo..." value={formData.message} onChange={handleChange} />
-                                </div>
-                            </div>
-
-                            <div style={{ marginTop: 'var(--space-xl)', textAlign: 'center' }}>
-                                <button type="submit" className="btn btn-primary btn-lg">
-                                    Enviar Solicitud de Consignación →
-                                </button>
-                                <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: 'var(--space-md)' }}>
-                                    Sin compromiso. Te contactaremos en menos de 24 horas.
-                                </p>
-                            </div>
-                        </form>
-                    )}
+                    <div className="cotizacion-embed">
+                        <iframe
+                            src="https://mrcar-cotizacion.vercel.app"
+                            title="Cotizador de Vehículos — Auto Directo"
+                            width="100%"
+                            height="800"
+                            style={{
+                                border: 'none',
+                                borderRadius: 'var(--radius-xl)',
+                                background: 'var(--color-bg-card)',
+                                boxShadow: 'var(--shadow-xl)',
+                            }}
+                            allow="clipboard-write"
+                            loading="lazy"
+                        />
+                    </div>
                 </div>
             </section>
         </>
     );
 }
+
