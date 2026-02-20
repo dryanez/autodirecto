@@ -278,15 +278,15 @@ export default function AgendarWizard() {
         setError('');
 
         // Validation per step (8 steps total)
-        // Step 1: RUT, Step 2: Name, Step 3: Phone, Step 4: Email, Step 5: Location, Step 6: Plate, Step 7: Vehicle, Step 8: Calendar
+        // Step 1: Name, Step 2: RUT, Step 3: Phone, Step 4: Email, Step 5: Location, Step 6: Plate, Step 7: Vehicle, Step 8: Calendar
         if (step === 1) {
-            if (!formData.rut.trim() || !validateRut(formData.rut)) {
-                setError('Por favor ingresa un RUT válido (ej: 12.345.678-9)');
+            if (!formData.firstName.trim() || !formData.lastName.trim()) {
+                setError('Por favor ingresa tu nombre y apellido');
                 return;
             }
         } else if (step === 2) {
-            if (!formData.firstName.trim() || !formData.lastName.trim()) {
-                setError('Por favor ingresa tu nombre y apellido');
+            if (!formData.rut.trim() || !validateRut(formData.rut)) {
+                setError('Por favor ingresa un RUT válido (ej: 12.345.678-9)');
                 return;
             }
         } else if (step === 3) {
