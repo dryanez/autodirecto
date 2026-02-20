@@ -1,14 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { vehicles } from '@/lib/mockData';
 import { use } from 'react';
 
 export default function VehicleDetailPage({ params }) {
     const resolvedParams = use(params);
-    const vehicle = vehicles.find(v => v.id === parseInt(resolvedParams.id));
+    const [vehicle, setVehicle] = useState(null);
+    const [related, setRelated] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
+
+    useEffect(() => {
+        const id = resolvedParams.id;
+        // Fetch the specific vehicle
+        fetch(`/api/listings?id=${id}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data && !data.error) setVehicle(data);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+
+        // Fetch all for related section
+        fetch('/api/listings')
+            .then(r => r.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setRelated(data.filter(v => String(v.id) !== String(id)).slice(0, 3));
+                }
+            })
+            .catch(() => {});
+    }, [resolvedParams.id]);
+
+    if (loading) {
+        return (
+            <div className="container detail-page" style={{ textAlign: 'center', padding: 'var(--space-4xl)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>⏳</div>
+                <p style={{ color: 'var(--color-text-secondary)' }}>Cargando vehículo...</p>
+            </div>
+        );
+    }
 
     if (!vehicle) {
         return (
@@ -36,9 +68,7 @@ export default function VehicleDetailPage({ params }) {
         return new Intl.NumberFormat('es-CL').format(km);
     };
 
-    const relatedVehicles = vehicles
-        .filter(v => v.id !== vehicle.id)
-        .slice(0, 3);
+    const relatedVehicles = related;
 
     const whatsappMessage = encodeURIComponent(
         `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} publicado en Auto Directo. ¿Podrían darme más información?`

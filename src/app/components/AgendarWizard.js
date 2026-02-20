@@ -1,6 +1,174 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+
+// ─── Calendar Helpers ───
+const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const MONTH_NAMES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const TIME_SLOTS = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '14:00', '14:30',
+    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
+];
+
+function getCalendarDays(year, month) {
+    const firstDay = new Date(year, month, 1);
+    // Shift so Monday = 0
+    let startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    // Empty cells before first day
+    for (let i = 0; i < startDay; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) days.push(d);
+    return days;
+}
+
+function isDateDisabled(year, month, day) {
+    const date = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Disable past days and Sundays
+    return date < today || date.getDay() === 0;
+}
+
+// ─── Calendar Component ───
+function CalendarPicker({ selectedDate, selectedTime, onSelectDate, onSelectTime }) {
+    const today = new Date();
+    const [viewYear, setViewYear] = useState(today.getFullYear());
+    const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+    const days = useMemo(() => getCalendarDays(viewYear, viewMonth), [viewYear, viewMonth]);
+
+    const prevMonth = () => {
+        if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+        else setViewMonth(m => m - 1);
+    };
+    const nextMonth = () => {
+        if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+        else setViewMonth(m => m + 1);
+    };
+
+    // Don't allow navigating to past months
+    const canGoPrev = viewYear > today.getFullYear() || (viewYear === today.getFullYear() && viewMonth > today.getMonth());
+
+    return (
+        <div>
+            {/* Month Navigation */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                <button
+                    type="button"
+                    onClick={prevMonth}
+                    disabled={!canGoPrev}
+                    style={{
+                        background: 'none', border: 'none', color: canGoPrev ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                        cursor: canGoPrev ? 'pointer' : 'default', fontSize: '1.5rem', padding: 'var(--space-sm)'
+                    }}
+                >←</button>
+                <h3 style={{ margin: 0 }}>{MONTH_NAMES[viewMonth]} {viewYear}</h3>
+                <button
+                    type="button"
+                    onClick={nextMonth}
+                    style={{ background: 'none', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer', fontSize: '1.5rem', padding: 'var(--space-sm)' }}
+                >→</button>
+            </div>
+
+            {/* Day Headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', marginBottom: 'var(--space-xs)' }}>
+                {DAYS_OF_WEEK.map(d => (
+                    <div key={d} style={{ padding: 'var(--space-xs)', fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{d}</div>
+                ))}
+            </div>
+
+            {/* Day Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: 'var(--space-lg)' }}>
+                {days.map((day, i) => {
+                    if (day === null) return <div key={`empty-${i}`} />;
+                    const disabled = isDateDisabled(viewYear, viewMonth, day);
+                    const isSelected = selectedDate === `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+                    return (
+                        <button
+                            key={day}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => onSelectDate(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}
+                            style={{
+                                padding: 'var(--space-sm)',
+                                borderRadius: 'var(--radius-sm)',
+                                border: isToday && !isSelected ? '1px solid var(--color-accent)' : '1px solid transparent',
+                                background: isSelected ? 'var(--color-accent)' : disabled ? 'transparent' : 'var(--color-bg-secondary)',
+                                color: isSelected ? '#fff' : disabled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                                cursor: disabled ? 'default' : 'pointer',
+                                fontWeight: isSelected || isToday ? 700 : 400,
+                                fontSize: '0.95rem',
+                                transition: 'var(--transition-fast)',
+                                opacity: disabled ? 0.4 : 1
+                            }}
+                        >
+                            {day}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Time Slots — Only shown after a date is selected */}
+            {selectedDate && (
+                <div className="animate-fadeIn">
+                    <h4 style={{ marginBottom: 'var(--space-sm)', color: 'var(--color-text-secondary)' }}>
+                        Horarios disponibles para el <span style={{ color: 'var(--color-accent)' }}>{selectedDate.split('-').reverse().join('/')}</span>
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)' }}>
+                        {TIME_SLOTS.map(time => {
+                            const isSelected = selectedTime === time;
+                            return (
+                                <button
+                                    key={time}
+                                    type="button"
+                                    onClick={() => onSelectTime(time)}
+                                    style={{
+                                        padding: 'var(--space-sm) var(--space-xs)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: isSelected ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+                                        background: isSelected ? 'var(--color-accent)' : 'var(--color-bg-secondary)',
+                                        color: isSelected ? '#fff' : 'var(--color-text-primary)',
+                                        cursor: 'pointer',
+                                        fontWeight: isSelected ? 700 : 400,
+                                        fontSize: '0.9rem',
+                                        transition: 'var(--transition-fast)'
+                                    }}
+                                >
+                                    {time}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Confirmation notice */}
+                    <div style={{
+                        marginTop: 'var(--space-lg)',
+                        padding: 'var(--space-md)',
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        gap: 'var(--space-sm)',
+                        alignItems: 'flex-start'
+                    }}>
+                        <span style={{ fontSize: '1.3rem' }}>📞</span>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                            <strong style={{ color: 'var(--color-text-primary)' }}>Importante:</strong> Un ejecutivo de Auto Directo se comunicará contigo <strong style={{ color: 'var(--color-accent)' }}>un día antes</strong> de la fecha seleccionada para confirmar la visita y coordinar los últimos detalles.
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // Data for regions and communes from the original app
 const regionsCommunes = {
@@ -47,6 +215,8 @@ export default function AgendarWizard() {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
+        rut: '',
+        countryCode: '+56',
         phone: '',
         email: '',
         region: '',
@@ -55,7 +225,8 @@ export default function AgendarWizard() {
         plate: '',
         mileage: '',
         version: '',
-        appointmentDate: ''
+        appointmentDate: '',
+        appointmentTime: ''
     });
     const [carData, setCarData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -76,36 +247,68 @@ export default function AgendarWizard() {
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+    const validateRut = (rut) => {
+        if (!rut) return false;
+        const clean = rut.replace(/\./g, '').replace(/-/g, '');
+        if (clean.length < 8 || clean.length > 9) return false;
+        const body = clean.slice(0, -1);
+        const dv = clean.slice(-1).toUpperCase();
+        let sum = 0, mul = 2;
+        for (let i = body.length - 1; i >= 0; i--) {
+            sum += parseInt(body[i]) * mul;
+            mul = mul === 7 ? 2 : mul + 1;
+        }
+        const expected = 11 - (sum % 11);
+        const dvExpected = expected === 11 ? '0' : expected === 10 ? 'K' : String(expected);
+        return dv === dvExpected;
+    };
+
+    const formatRut = (value) => {
+        let clean = value.replace(/[^0-9kK]/g, '');
+        if (clean.length > 9) clean = clean.slice(0, 9);
+        if (clean.length <= 1) return clean;
+        const body = clean.slice(0, -1);
+        const dv = clean.slice(-1);
+        const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return `${formatted}-${dv}`;
+    };
+
     // Step Logic
     const handleNext = async () => {
         setError('');
 
-        // Validation per step
+        // Validation per step (8 steps total)
+        // Step 1: RUT, Step 2: Name, Step 3: Phone, Step 4: Email, Step 5: Location, Step 6: Plate, Step 7: Vehicle, Step 8: Calendar
         if (step === 1) {
+            if (!formData.rut.trim() || !validateRut(formData.rut)) {
+                setError('Por favor ingresa un RUT válido (ej: 12.345.678-9)');
+                return;
+            }
+        } else if (step === 2) {
             if (!formData.firstName.trim() || !formData.lastName.trim()) {
                 setError('Por favor ingresa tu nombre y apellido');
                 return;
             }
-        } else if (step === 2) {
-            // Basic phone validation for now
-            if (!formData.phone.trim() || formData.phone.length < 8) {
+        } else if (step === 3) {
+            const fullPhone = formData.phone.replace(/\s/g, '');
+            if (!fullPhone || fullPhone.length < 8) {
                 setError('Por favor ingresa un número de teléfono válido');
                 return;
             }
-        } else if (step === 3) {
+        } else if (step === 4) {
             if (!validateEmail(formData.email)) {
                 setError('Por favor ingresa un email válido');
                 return;
             }
-        } else if (step === 4) {
+        } else if (step === 5) {
             if (!formData.region || !formData.commune || !formData.address.trim()) {
                 setError('Por favor completa tu dirección');
                 return;
             }
         }
 
-        // Special handling for Plate lookup (Step 5)
-        if (step === 5) {
+        // Special handling for Plate lookup (Step 6)
+        if (step === 6) {
             const plate = formData.plate.trim().toUpperCase();
             if (!plate || plate.length < 5) {
                 setError('Ingresa una patente válida');
@@ -132,19 +335,39 @@ export default function AgendarWizard() {
             }
         }
 
-        // Special handling for Scheduling (Step 7)
-        if (step === 7) {
-            if (!formData.appointmentDate) {
-                setError('Selecciona una fecha y hora');
+        // Special handling for Scheduling (Step 8)
+        if (step === 8) {
+            if (!formData.appointmentDate || !formData.appointmentTime) {
+                setError('Selecciona una fecha y un horario');
                 return;
             }
 
             setLoading(true);
             try {
+                // Combine date + time into ISO string
+                const fullDateTime = `${formData.appointmentDate}T${formData.appointmentTime}:00`;
+                const payload = { ...formData, appointmentDate: fullDateTime };
+
+                // 1. Save to Supabase via our appointments API (The Bridge data layer)
+                const supaRes = await fetch('/api/appointments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...formData,
+                        carData: formData.carData || null,
+                    })
+                });
+                const supaData = await supaRes.json();
+                if (!supaRes.ok || !supaData.success) {
+                    console.warn('[Wizard] Supabase save warning:', supaData.error);
+                    // Non-blocking — continue even if Supabase is not configured
+                }
+
+                // 2. Also call the MrCar proxy for backward compatibility
                 const res = await fetch('/api/mrcar/schedule-appointment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
@@ -164,16 +387,35 @@ export default function AgendarWizard() {
     };
 
     if (success) {
+        const appointmentDisplay = formData.appointmentDate
+            ? `${formData.appointmentDate.split('-').reverse().join('/')} a las ${formData.appointmentTime} hrs`
+            : '';
+
         return (
             <div className="card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: 'var(--space-2xl)' }}>
                 <div style={{ fontSize: '4rem', marginBottom: 'var(--space-md)' }}>✅</div>
                 <h2 style={{ marginBottom: 'var(--space-md)' }}>¡Visita Agendada!</h2>
                 <p style={{ fontSize: '1.25rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-lg)' }}>
-                    Hemos confirmado tu cita para el <br />
-                    <strong style={{ color: 'var(--color-primary)' }}>{new Date(formData.appointmentDate).toLocaleString()}</strong>
+                    Hemos registrado tu cita para el <br />
+                    <strong style={{ color: 'var(--color-primary)' }}>{appointmentDisplay}</strong>
                 </p>
-                <div style={{ padding: 'var(--space-md)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-lg)' }}>
-                    <p>Un ejecutivo te contactará pronto al <strong>{formData.phone}</strong> para confirmar los detalles.</p>
+                <div style={{
+                    padding: 'var(--space-md)',
+                    background: 'rgba(59, 130, 246, 0.08)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: 'var(--radius-md)',
+                    marginBottom: 'var(--space-lg)',
+                    textAlign: 'left'
+                }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '1.3rem' }}>📞</span>
+                        <div>
+                            <p style={{ margin: '0 0 var(--space-sm) 0', fontWeight: 600 }}>¿Qué sigue?</p>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                                Un ejecutivo de Auto Directo se comunicará contigo al <strong>{formData.countryCode} {formData.phone}</strong> <strong style={{ color: 'var(--color-accent)' }}>un día antes</strong> de la fecha de tu cita para confirmar la visita y coordinar los detalles de la inspección.
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 <button onClick={() => window.location.href = '/'} className="btn btn-primary">
                     Volver al Inicio
@@ -189,7 +431,7 @@ export default function AgendarWizard() {
                 <div style={{
                     height: '100%',
                     background: 'var(--color-accent-gradient)',
-                    width: `${(step / 7) * 100}%`,
+                    width: `${(step / 8) * 100}%`,
                     transition: 'width 0.3s ease'
                 }} />
             </div>
@@ -198,12 +440,13 @@ export default function AgendarWizard() {
                 {/* Step Title */}
                 <h2 style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
                     {step === 1 && '¿Cuál es tu nombre?'}
-                    {step === 2 && '¿Cuál es tu teléfono?'}
-                    {step === 3 && '¿Cuál es tu correo?'}
-                    {step === 4 && '¿Dónde te encuentras?'}
-                    {step === 5 && '¿Cuál es la patente?'}
-                    {step === 6 && 'Detalles del Vehículo'}
-                    {step === 7 && 'Elige un horario'}
+                    {step === 2 && '¿Cuál es tu RUT?'}
+                    {step === 3 && '¿Cuál es tu teléfono?'}
+                    {step === 4 && '¿Cuál es tu correo?'}
+                    {step === 5 && '¿Dónde te encuentras?'}
+                    {step === 6 && '¿Cuál es la patente?'}
+                    {step === 7 && 'Detalles del Vehículo'}
+                    {step === 8 && 'Elige un horario'}
                 </h2>
 
                 {/* Loading Grid */}
@@ -251,20 +494,61 @@ export default function AgendarWizard() {
                             </div>
                         )}
 
-                        {/* STEP 2: Phone */}
+                        {/* STEP 2: RUT */}
                         {step === 2 && (
-                            <input
-                                type="tel"
-                                className="input-field"
-                                placeholder="+56 9 1234 5678"
-                                value={formData.phone}
-                                onChange={e => updateFormData('phone', e.target.value)}
-                                autoFocus
-                            />
+                            <div style={{ textAlign: 'center' }}>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    placeholder="12.345.678-9"
+                                    value={formData.rut}
+                                    onChange={e => updateFormData('rut', formatRut(e.target.value))}
+                                    autoFocus
+                                    style={{ textAlign: 'center', fontSize: '1.3rem', letterSpacing: '0.05em', maxWidth: '280px', margin: '0 auto' }}
+                                />
+                                <p style={{ marginTop: 'var(--space-sm)', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                                    Necesitamos tu RUT para generar la documentación
+                                </p>
+                            </div>
                         )}
 
-                        {/* STEP 3: Email */}
+                        {/* STEP 3: Phone with Country Code */}
                         {step === 3 && (
+                            <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'stretch' }}>
+                                <select
+                                    className="input-field"
+                                    value={formData.countryCode}
+                                    onChange={e => updateFormData('countryCode', e.target.value)}
+                                    style={{ width: '120px', flexShrink: 0, fontSize: '0.95rem' }}
+                                >
+                                    <option value="+56">🇨🇱 +56</option>
+                                    <option value="+54">🇦🇷 +54</option>
+                                    <option value="+55">🇧🇷 +55</option>
+                                    <option value="+57">🇨🇴 +57</option>
+                                    <option value="+51">🇵🇪 +51</option>
+                                    <option value="+52">🇲🇽 +52</option>
+                                    <option value="+598">🇺🇾 +598</option>
+                                    <option value="+591">🇧🇴 +591</option>
+                                    <option value="+593">🇪🇨 +593</option>
+                                    <option value="+595">🇵🇾 +595</option>
+                                    <option value="+58">🇻🇪 +58</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                </select>
+                                <input
+                                    type="tel"
+                                    className="input-field"
+                                    placeholder="9 1234 5678"
+                                    value={formData.phone}
+                                    onChange={e => updateFormData('phone', e.target.value)}
+                                    autoFocus
+                                    style={{ flex: 1 }}
+                                />
+                            </div>
+                        )}
+
+                        {/* STEP 4: Email */}
+                        {step === 4 && (
                             <input
                                 type="email"
                                 className="input-field"
@@ -275,8 +559,8 @@ export default function AgendarWizard() {
                             />
                         )}
 
-                        {/* STEP 4: Location */}
-                        {step === 4 && (
+                        {/* STEP 5: Location */}
+                        {step === 5 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                                 <select
                                     className="input-field"
@@ -314,8 +598,8 @@ export default function AgendarWizard() {
                             </div>
                         )}
 
-                        {/* STEP 5: Plate */}
-                        {step === 5 && (
+                        {/* STEP 6: Plate */}
+                        {step === 6 && (
                             <div style={{ textAlign: 'center' }}>
                                 <input
                                     type="text"
@@ -340,8 +624,8 @@ export default function AgendarWizard() {
                             </div>
                         )}
 
-                        {/* STEP 6: Vehicle Details */}
-                        {step === 6 && (
+                        {/* STEP 7: Vehicle Details */}
+                        {step === 7 && (
                             <div>
                                 {carData && (
                                     <div style={{
@@ -383,22 +667,14 @@ export default function AgendarWizard() {
                             </div>
                         )}
 
-                        {/* STEP 7: Check Date */}
-                        {step === 7 && (
-                            <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--space-xs)' }}>Fecha y Hora</label>
-                                <input
-                                    type="datetime-local"
-                                    className="input-field"
-                                    value={formData.appointmentDate}
-                                    onChange={e => updateFormData('appointmentDate', e.target.value)}
-                                    min={new Date().toISOString().slice(0, 16)}
-                                    style={{ fontSize: '1.1rem' }}
-                                />
-                                <p style={{ marginTop: 'var(--space-md)', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                                    Selecciona un horario entre 9:00 y 19:00 hrs.
-                                </p>
-                            </div>
+                        {/* STEP 8: Calendar Picker */}
+                        {step === 8 && (
+                            <CalendarPicker
+                                selectedDate={formData.appointmentDate}
+                                selectedTime={formData.appointmentTime}
+                                onSelectDate={(date) => updateFormData('appointmentDate', date)}
+                                onSelectTime={(time) => updateFormData('appointmentTime', time)}
+                            />
                         )}
 
                         {/* Navigation Buttons */}
@@ -409,7 +685,7 @@ export default function AgendarWizard() {
                                 </button>
                             )}
                             <button onClick={handleNext} className="btn btn-primary" style={{ flex: 1 }}>
-                                {step === 5 ? 'Buscar Vehículo' : step === 7 ? 'Confirmar Cita' : 'Continuar'}
+                                {step === 6 ? 'Buscar Vehículo' : step === 8 ? 'Confirmar Cita' : 'Continuar'}
                             </button>
                         </div>
                     </div>

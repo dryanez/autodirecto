@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import VehicleCard from '../components/VehicleCard';
-import { vehicles, brands, fuelTypes, transmissions } from '@/lib/mockData';
 
 export default function CatalogoPage() {
+    const [vehicles, setVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedBrand, setSelectedBrand] = useState('');
     const [selectedFuel, setSelectedFuel] = useState('');
@@ -12,66 +13,48 @@ export default function CatalogoPage() {
     const [priceRange, setPriceRange] = useState('');
     const [sortBy, setSortBy] = useState('newest');
 
+    useEffect(() => {
+        fetch('/api/listings')
+            .then(r => r.json())
+            .then(data => { setVehicles(Array.isArray(data) ? data : []); setLoading(false); })
+            .catch(() => setLoading(false));
+    }, []);
+
+    // Build dynamic filter options from live data
+    const brands = useMemo(() => [...new Set(vehicles.map(v => v.brand).filter(Boolean))].sort(), [vehicles]);
+    const fuelTypes = useMemo(() => [...new Set(vehicles.map(v => v.fuel_type).filter(Boolean))].sort(), [vehicles]);
+    const transmissions = useMemo(() => [...new Set(vehicles.map(v => v.transmission).filter(Boolean))].sort(), [vehicles]);
+
     const filteredVehicles = useMemo(() => {
         let result = [...vehicles];
 
-        // Search
         if (search) {
             const q = search.toLowerCase();
             result = result.filter(v =>
                 `${v.brand} ${v.model} ${v.year} ${v.color}`.toLowerCase().includes(q)
             );
         }
-
-        // Brand filter
-        if (selectedBrand) {
-            result = result.filter(v => v.brand === selectedBrand);
-        }
-
-        // Fuel filter
-        if (selectedFuel) {
-            result = result.filter(v => v.fuel_type === selectedFuel);
-        }
-
-        // Transmission filter
-        if (selectedTransmission) {
-            result = result.filter(v => v.transmission === selectedTransmission);
-        }
-
-        // Price range
+        if (selectedBrand) result = result.filter(v => v.brand === selectedBrand);
+        if (selectedFuel)  result = result.filter(v => v.fuel_type === selectedFuel);
+        if (selectedTransmission) result = result.filter(v => v.transmission === selectedTransmission);
         if (priceRange) {
             const [min, max] = priceRange.split('-').map(Number);
             result = result.filter(v => v.price >= min && (max ? v.price <= max : true));
         }
 
-        // Sort
         switch (sortBy) {
-            case 'price-asc':
-                result.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-desc':
-                result.sort((a, b) => b.price - a.price);
-                break;
-            case 'year-desc':
-                result.sort((a, b) => b.year - a.year);
-                break;
-            case 'mileage-asc':
-                result.sort((a, b) => a.mileage_km - b.mileage_km);
-                break;
-            default: // newest
-                result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            case 'price-asc':  result.sort((a, b) => a.price - b.price); break;
+            case 'price-desc': result.sort((a, b) => b.price - a.price); break;
+            case 'year-desc':  result.sort((a, b) => b.year - a.year); break;
+            case 'mileage-asc': result.sort((a, b) => a.mileage_km - b.mileage_km); break;
+            default: result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         }
-
         return result;
-    }, [search, selectedBrand, selectedFuel, selectedTransmission, priceRange, sortBy]);
+    }, [vehicles, search, selectedBrand, selectedFuel, selectedTransmission, priceRange, sortBy]);
 
     const clearFilters = () => {
-        setSearch('');
-        setSelectedBrand('');
-        setSelectedFuel('');
-        setSelectedTransmission('');
-        setPriceRange('');
-        setSortBy('newest');
+        setSearch(''); setSelectedBrand(''); setSelectedFuel('');
+        setSelectedTransmission(''); setPriceRange(''); setSortBy('newest');
     };
 
     return (
@@ -140,7 +123,7 @@ export default function CatalogoPage() {
                         <h1 style={{ fontSize: '1.75rem' }}>
                             Catálogo de Vehículos
                             <span className="catalog-count" style={{ display: 'block' }}>
-                                {filteredVehicles.length} vehículos encontrados
+                                {loading ? 'Cargando...' : `${filteredVehicles.length} vehículos encontrados`}
                             </span>
                         </h1>
                         <select className="input-field" style={{ width: 'auto' }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
@@ -152,21 +135,30 @@ export default function CatalogoPage() {
                         </select>
                     </div>
 
-                    <div className="vehicles-grid">
-                        {filteredVehicles.map(vehicle => (
-                            <VehicleCard key={vehicle.id} vehicle={vehicle} />
-                        ))}
-                    </div>
-
-                    {filteredVehicles.length === 0 && (
+                    {loading ? (
                         <div style={{ textAlign: 'center', padding: 'var(--space-4xl)', color: 'var(--color-text-secondary)' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🔍</div>
-                            <h3>No encontramos vehículos con esos filtros</h3>
-                            <p>Intenta cambiar los filtros o buscar algo diferente.</p>
-                            <button className="btn btn-primary" style={{ marginTop: 'var(--space-lg)' }} onClick={clearFilters}>
-                                Ver Todos los Vehículos
-                            </button>
+                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>⏳</div>
+                            <p>Cargando vehículos...</p>
                         </div>
+                    ) : (
+                        <>
+                            <div className="vehicles-grid">
+                                {filteredVehicles.map(vehicle => (
+                                    <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                                ))}
+                            </div>
+
+                            {filteredVehicles.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: 'var(--space-4xl)', color: 'var(--color-text-secondary)' }}>
+                                    <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🔍</div>
+                                    <h3>No encontramos vehículos con esos filtros</h3>
+                                    <p>Intenta cambiar los filtros o buscar algo diferente.</p>
+                                    <button className="btn btn-primary" style={{ marginTop: 'var(--space-lg)' }} onClick={clearFilters}>
+                                        Ver Todos los Vehículos
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
