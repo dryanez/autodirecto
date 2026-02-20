@@ -363,7 +363,19 @@ export default function AgendarWizard() {
                     // Non-blocking — continue even if Supabase is not configured
                 }
 
-                // 2. Also call the MrCar proxy for backward compatibility
+                // 2. Create consignacion directly in the CRM (SimplyAPI)
+                const crmRes = await fetch('/api/crm/api/consignaciones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const crmData = await crmRes.json();
+                if (!crmRes.ok || !crmData.ok) {
+                    console.warn('[Wizard] CRM consignacion warning:', crmData.error);
+                    // Non-blocking — show success regardless
+                }
+
+                // 3. Also call the MrCar proxy for backward compatibility
                 const res = await fetch('/api/mrcar/schedule-appointment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
