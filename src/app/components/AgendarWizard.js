@@ -322,7 +322,13 @@ export default function AgendarWizard() {
                 const data = await res.json();
 
                 if (!res.ok || !data.success) {
-                    throw new Error(data.error || 'No pudimos encontrar el vehículo');
+                    // Manually trigger the fallback logic without throwing an error that gets caught and displayed
+                    setCarData(null);
+                    setFormData(prev => ({ ...prev, carData: { make: '', model: '', year: '' } }));
+                    setLoading(false);
+                    setError(''); // Clear any previous errors
+                    nextStep(); // Move to Step 7 to ask for manual input
+                    return;
                 }
 
                 setCarData(data);
@@ -331,10 +337,11 @@ export default function AgendarWizard() {
                 nextStep();
                 return;
             } catch (err) {
-                // Fallback to manual entry if search fails
+                // Fallback to manual entry if network/fetch fails completely
                 setCarData(null);
                 setFormData(prev => ({ ...prev, carData: { make: '', model: '', year: '' } }));
                 setLoading(false);
+                setError('');
                 nextStep(); // Move to Step 7 to ask for manual input
                 return;
             }
