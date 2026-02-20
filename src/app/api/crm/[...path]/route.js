@@ -5,19 +5,23 @@ import { cookies } from 'next/headers';
 const CRM_BASE = process.env.SIMPLYAPI_URL || 'http://localhost:8080';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'autodirecto-crm-secret-2026';
 
-// Routes that don't require auth (login endpoint)
+// Routes that don't require auth (public-facing endpoints)
 const PUBLIC_PATHS = ['api/auth/login'];
+// Routes that allow POST without auth (wizard form submissions)
+const PUBLIC_POST_PATHS = ['api/consignaciones'];
 
-function isPublic(pathArr) {
+function isPublic(pathArr, method) {
   const joined = pathArr.join('/');
-  return PUBLIC_PATHS.some((p) => joined.startsWith(p));
+  if (PUBLIC_PATHS.some((p) => joined.startsWith(p))) return true;
+  if (method === 'POST' && PUBLIC_POST_PATHS.some((p) => joined.startsWith(p))) return true;
+  return false;
 }
 
 async function proxyRequest(request, pathArr, method) {
   const cookieStore = await cookies();
   const adminToken = cookieStore.get('crm_token')?.value;
 
-  if (!isPublic(pathArr) && adminToken !== ADMIN_SECRET) {
+  if (!isPublic(pathArr, method) && adminToken !== ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
