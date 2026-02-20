@@ -383,6 +383,14 @@ export default function AgendarWizard() {
                 const fullDateTime = `${formData.appointmentDate}T${formData.appointmentTime}:00`;
                 const payload = { ...formData, appointmentDate: fullDateTime };
 
+                // Ensure numeric fields are proper integers for the backends
+                if (payload.carData && payload.carData.year) {
+                    payload.carData.year = parseInt(payload.carData.year, 10);
+                }
+                if (payload.mileage) {
+                    payload.mileage = parseInt(payload.mileage, 10);
+                }
+
                 // 1. Save to Supabase via our appointments API (The Bridge data layer)
                 const supaRes = await fetch('/api/appointments', {
                     method: 'POST',
