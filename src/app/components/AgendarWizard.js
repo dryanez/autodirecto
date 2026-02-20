@@ -321,7 +321,9 @@ export default function AgendarWizard() {
                 const res = await fetch(`/api/mrcar/vehicle/${plate}`);
                 const data = await res.json();
 
-                if (!res.ok || !data.success) throw new Error(data.error || 'No pudimos encontrar el vehículo');
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || 'No pudimos encontrar el vehículo');
+                }
 
                 setCarData(data);
                 setFormData(prev => ({ ...prev, carData: data })); // Backend expects nested carData
@@ -329,8 +331,34 @@ export default function AgendarWizard() {
                 nextStep();
                 return;
             } catch (err) {
+                // Fallback to manual entry if search fails
+                setCarData(null);
+                setFormData(prev => ({ ...prev, carData: { make: '', model: '', year: '' } }));
                 setLoading(false);
-                setError(err.message);
+                nextStep(); // Move to Step 7 to ask for manual input
+                return;
+            }
+        }
+
+        if (step === 7) {
+            if (!carData) {
+                const cData = formData.carData || {};
+                if (!cData.make || !cData.make.trim()) {
+                    setError('Por favor ingresa la marca del vehículo');
+                    return;
+                }
+                if (!cData.model || !cData.model.trim()) {
+                    setError('Por favor ingresa el modelo del vehículo');
+                    return;
+                }
+                const yearNum = parseInt(cData.year);
+                if (!yearNum || isNaN(yearNum) || yearNum < 1980 || yearNum > new Date().getFullYear() + 1) {
+                    setError('Por favor ingresa un año válido (ej: 2018)');
+                    return;
+                }
+            }
+            if (!formData.mileage || isNaN(formData.mileage)) {
+                setError('Por favor ingresa el kilometraje actual');
                 return;
             }
         }
@@ -639,7 +667,7 @@ export default function AgendarWizard() {
                         {/* STEP 7: Vehicle Details */}
                         {step === 7 && (
                             <div>
-                                {carData && (
+                                {carData ? (
                                     <div style={{
                                         background: 'var(--color-bg-secondary)',
                                         padding: 'var(--space-md)',
@@ -650,6 +678,52 @@ export default function AgendarWizard() {
                                         <span className="badge badge-accent" style={{ marginBottom: 'var(--space-sm)' }}>Vehículo Encontrado</span>
                                         <h3 style={{ margin: 'var(--space-xs) 0' }}>{carData.make} {carData.model}</h3>
                                         <p style={{ color: 'var(--color-text-secondary)' }}>Año: {carData.year}</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ marginBottom: 'var(--space-lg)', textAlign: 'center' }}>
+                                        <div style={{
+                                            background: '#fffbeb',
+                                            border: '1px solid #f59e0b',
+                                            color: '#b45309',
+                                            padding: 'var(--space-sm) var(--space-md)',
+                                            borderRadius: 'var(--radius-md)',
+                                            marginBottom: 'var(--space-lg)',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            No pudimos recuperar los datos de la patente <strong>{formData.plate}</strong> automáticamente. Por favor, ingresa los datos de forma manual.
+                                        </div>
+                                        <div style={{ display: 'grid', gap: 'var(--space-md)', textAlign: 'left', marginBottom: 'var(--space-lg)' }}>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: 'var(--space-xs)' }}>Marca</label>
+                                                <input
+                                                    type="text"
+                                                    className="input-field"
+                                                    placeholder="Ej: Toyota"
+                                                    value={formData.carData?.make || ''}
+                                                    onChange={e => updateFormData('carData', { ...formData.carData, make: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: 'var(--space-xs)' }}>Modelo</label>
+                                                <input
+                                                    type="text"
+                                                    className="input-field"
+                                                    placeholder="Ej: Yaris"
+                                                    value={formData.carData?.model || ''}
+                                                    onChange={e => updateFormData('carData', { ...formData.carData, model: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: 'var(--space-xs)' }}>Año</label>
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    placeholder="Ej: 2020"
+                                                    value={formData.carData?.year || ''}
+                                                    onChange={e => updateFormData('carData', { ...formData.carData, year: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
