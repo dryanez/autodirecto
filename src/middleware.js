@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'autodirecto-crm-secret-2026';
 
-export function proxy(request) {
+export function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Only guard /admin routes (not /admin/login itself)
