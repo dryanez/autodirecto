@@ -401,16 +401,21 @@ export default function AgendarWizard() {
                     })
                 });
                 const supaData = await supaRes.json();
+                let supaId = null;
                 if (!supaRes.ok || !supaData.success) {
                     console.warn('[Wizard] Supabase save warning:', supaData.error);
-                    // Non-blocking — continue even if Supabase is not configured
+                } else {
+                    supaId = supaData.id;
                 }
 
                 // 2. Create consignacion directly in the CRM (SimplyAPI)
                 const crmRes = await fetch('/api/crm/api/consignaciones', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        ...payload,
+                        appointment_supabase_id: supaId
+                    }),
                 });
                 const crmData = await crmRes.json();
                 if (!crmRes.ok || !crmData.ok) {
