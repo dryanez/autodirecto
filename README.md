@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+> **📖 New here? Read [`PROJECT_OVERVIEW.md`](./PROJECT_OVERVIEW.md) first** — it explains every folder, system, API, and how they connect (SimplyAPI, MrCar, Funnels, Supabase, etc.)
+
 ## Getting Started
 
 First, run the development server:

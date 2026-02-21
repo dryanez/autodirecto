@@ -2,6 +2,8 @@
 
 > This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
 
+> **📖 Start by reading [`PROJECT_OVERVIEW.md`](./PROJECT_OVERVIEW.md)** — it explains the full architecture, every folder, every system (SimplyAPI, MrCar, Funnels), all API routes, database tables, and the business flow. Read it before diving into code.
+
 You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
 
 ## The 3-Layer Architecture
