@@ -52,6 +52,31 @@ export async function GET(request) {
 }
 
 // Normalize a Supabase listings row to match the shape expected by VehicleCard / detail page
+const FEATURE_MAP = {
+    aireAcondicionado:     '❄️ Aire acondicionado',
+    bluetooth:             '🎵 Bluetooth',
+    carplayAndroid:        '📱 CarPlay / Android Auto',
+    conexionUsb:           '🔌 Conexión USB',
+    gps:                   '📍 GPS / Navegación',
+    isofix:                '👶 ISOFIX',
+    smartKey:              '🔑 Smart Key',
+    lucesLed:              '💡 Luces LED',
+    mandosVolante:         '🎛️ Mandos en volante',
+    sensorEstacionamiento: '🅿️ Sensor de estacionamiento',
+    sonidoPremium:         '🔊 Sonido premium',
+    techoElectrico:        '🪟 Techo eléctrico',
+    ventiladorAsiento:     '💨 Ventilador de asiento',
+    calefactorAsiento:     '🔥 Calefactor de asiento',
+};
+
+function featuresToArray(features) {
+    if (Array.isArray(features)) return features;          // already array (mock data)
+    if (!features || typeof features !== 'object') return [];
+    return Object.entries(features)
+        .filter(([, v]) => v)
+        .map(([k]) => FEATURE_MAP[k] || k);
+}
+
 function normalizeRow(row) {
     return {
         id:           row.id,          // UUID string
@@ -67,7 +92,7 @@ function normalizeRow(row) {
         image_urls:   Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : [
             'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80'
         ]),
-        features:     row.features || {},
+        features:     featuresToArray(row.features),
         plate:        row.plate || '',
         motor:        row.motor || '',
         featured:     row.featured || false,
