@@ -15,6 +15,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Blanco Perlado',
         description: 'Toyota Corolla Cross 2023 en impecable estado. Único dueño, mantenciones al día en servicio técnico autorizado. Equipamiento completo con cámara de retroceso, pantalla táctil, sensores de estacionamiento y control crucero. Ideal para la familia.',
+        features: ['📍 GPS / Navegación', '📷 Cámara de retroceso', '🅿️ Sensores de estacionamiento', '🎛️ Control crucero', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🔑 Llave de proximidad', '💺 Asientos de tela premium'],
         image_urls: [
             'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&q=80',
             'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80',
@@ -34,6 +35,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Gris Oscuro',
         description: 'Hyundai Tucson 2022 con paquete de seguridad avanzado. Frenado autónomo de emergencia, alerta de punto ciego y asistente de mantenimiento de carril. Interior en excelente estado, sin detalles.',
+        features: ['🛡️ Frenado autónomo de emergencia', '👁️ Alerta de punto ciego', '🛣️ Asistente de carril', '📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático dual', '🔑 Smart Key', '🪟 Techo panorámico'],
         image_urls: [
             'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&q=80',
             'https://images.unsplash.com/photo-1606611013004-0d4e4cbab27c?w=800&q=80',
@@ -53,6 +55,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Rojo Soul Crystal',
         description: 'Mazda CX-5 GT 2023 con motor Skyactiv-G 2.5L. Techo panorámico, asientos de cuero con calefacción, sistema Bose premium de 10 parlantes. Vehículo con historial verificado y garantía de fábrica vigente.',
+        features: ['🪟 Techo panorámico', '💺 Asientos de cuero con calefacción', '🔊 Audio Bose 10 parlantes', '📍 GPS / Navegación', '📷 Cámara de retroceso 360°', '🛡️ i-Activsense (seguridad activa)', '📱 Apple CarPlay / Android Auto', '🔑 Llave de proximidad'],
         image_urls: [
             'https://images.unsplash.com/photo-1612825173281-9a193378527e?w=800&q=80',
             'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&q=80',
@@ -72,6 +75,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Azul Gravity',
         description: 'Kia Sportage 2022 versión EX con pantalla dual panorámica de 12.3". Cargador inalámbrico, Apple CarPlay y Android Auto. Excelente rendimiento de combustible y comodidad de manejo.',
+        features: ['🖥️ Pantalla dual panorámica 12.3"', '⚡ Cargador inalámbrico', '📱 Apple CarPlay / Android Auto', '📍 GPS / Navegación', '🅿️ Sensores de estacionamiento', '📷 Cámara de retroceso', '❄️ Climatizador automático', '🔑 Smart Key'],
         image_urls: [
             'https://images.unsplash.com/photo-1619976215249-0bccb4889f66?w=800&q=80',
             'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80',
@@ -91,6 +95,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Negro Obsidiana',
         description: 'Nissan Kicks 2023 Exclusive con sistema e-Power. Tecnología de asistencia al conductor ProPILOT, cámara 360° y monitor de punto ciego. Bajo kilometraje, como nuevo.',
+        features: ['🤖 ProPILOT (asistente de conducción)', '📷 Cámara 360°', '👁️ Monitor de punto ciego', '📱 Apple CarPlay / Android Auto', '📍 GPS / Navegación', '🎛️ Control crucero inteligente', '🔑 Llave de proximidad', '⚡ Cargador inalámbrico'],
         image_urls: [
             'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
             'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80',
@@ -110,6 +115,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Plata',
         description: 'Chevrolet Tracker Premier 2022 con motor turbo 1.2L. WiFi integrado, OnStar activo, 6 airbags y control de estabilidad. Perfecto estado mecánico con revisiones completas.',
+        features: ['📶 WiFi integrado (OnStar)', '📍 GPS / Navegación', '🛡️ 6 Airbags', '📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🎛️ Control crucero', '🔑 Llave de proximidad'],
         image_urls: [
             'https://images.unsplash.com/photo-1549317661-bd32c8ce0637?w=800&q=80',
             'https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&q=80',
@@ -129,6 +135,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Naranja Sunshine',
         description: 'Subaru XV 2.0i AWD 2021 con tracción integral permanente. EyeSight con frenado autónomo, alerta de cambio de carril y crucero adaptativo. Ideal para aventura y ciudad.',
+        features: ['🚗 Tracción AWD permanente', '👁️ EyeSight (frenado autónomo)', '🛣️ Alerta de cambio de carril', '🎛️ Crucero adaptativo', '📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🔑 Llave de proximidad'],
         image_urls: [
             'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80',
             'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&q=80',
@@ -148,6 +155,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Blanco Pure',
         description: 'Volkswagen T-Cross Highline 2023 con motor TSI 1.0 turbo. Pantalla de 10.1", climatizador automático, asistente de estacionamiento y Hill Hold Control. Calidad alemana a un precio accesible.',
+        features: ['🖥️ Pantalla táctil 10.1"', '🅿️ Asistente de estacionamiento', '📍 GPS / Navegación', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🎛️ Control crucero', '🔑 Llave de proximidad', '📷 Cámara de retroceso'],
         image_urls: [
             'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800&q=80',
             'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80',
@@ -167,6 +175,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Azul Obsidian',
         description: 'Honda HR-V EXL 2022 con asientos Magic Seat y amplísimo espacio interior. Honda Sensing completo, techo solar, tapicería de cuero y sistema de audio premium.',
+        features: ['🪟 Techo solar eléctrico', '💺 Asientos Magic Seat (cuero)', '🛡️ Honda Sensing completo', '📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '🔊 Audio premium', '❄️ Climatizador automático', '🔑 Smart Key'],
         image_urls: [
             'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80',
             'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&q=80',
@@ -186,6 +195,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Verde Selva',
         description: 'Toyota RAV4 Hybrid 2021 con sistema dual de motor eléctrico y bencina. Consumo excepcional de 4.8L/100km. Toyota Safety Sense 2.0 completo, navegación GPS y cámara 360°.',
+        features: ['⚡ Motor híbrido (4.8L/100km)', '📍 GPS / Navegación', '📷 Cámara 360°', '🛡️ Toyota Safety Sense 2.0', '🎛️ Control crucero adaptativo', '🅿️ Estacionamiento automático', '💺 Asientos de cuero con calefacción', '🪟 Techo panorámico'],
         image_urls: [
             'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80',
             'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80',
@@ -205,6 +215,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Rojo Bright',
         description: 'Suzuki Vitara GLX 2023 con sistema AllGrip Select de tracción variable. Motor BoosterJet turbo 1.4L con 140 HP. Equipamiento premium con cámara de retroceso y navegación.',
+        features: ['🚗 AllGrip Select (tracción variable)', '📍 GPS / Navegación', '📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🎛️ Control crucero', '🔑 Llave de proximidad', '🛡️ 6 Airbags'],
         image_urls: [
             'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=800&q=80',
             'https://images.unsplash.com/photo-1581540222194-0def2dda95b8?w=800&q=80',
@@ -224,6 +235,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Blanco Dover',
         description: 'MG ZS Excite 2023 con pantalla táctil de 10.1" y sistema i-Smart. Sunroof panorámico eléctrico, 6 airbags, frenos ABS con EBD. Mejor relación precio-equipamiento del mercado.',
+        features: ['🪟 Sunroof panorámico eléctrico', '🖥️ Pantalla táctil 10.1" i-Smart', '📱 Apple CarPlay / Android Auto', '📍 GPS / Navegación', '🛡️ 6 Airbags', '🎛️ Control crucero', '🔑 Llave de proximidad', '❄️ Climatizador automático'],
         image_urls: [
             'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&q=80',
             'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&q=80',
@@ -243,6 +255,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Gris Artense',
         description: 'Peugeot 2008 Allure 2022 con i-Cockpit 3D y pantalla táctil central de 10". Motor PureTech 1.2 turbo 130 HP. Diseño europeo elegante con interior premium y asistencias de conducción.',
+        features: ['🖥️ i-Cockpit 3D con pantalla 10"', '📍 GPS / Navegación', '📷 Cámara de retroceso', '🛡️ Frenado de emergencia automático', '👁️ Alerta de punto ciego', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🔑 Llave de proximidad'],
         image_urls: [
             'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&q=80',
             'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80',
@@ -262,6 +275,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Negro Shadow',
         description: 'Ford Territory Titanium 2023 con motor EcoBoost 1.5 turbo. Panoramic roof, asientos eléctricos con memoria, sistema SYNC 3 con navegación. SUV espaciosa y tecnológica.',
+        features: ['🪟 Techo panorámico', '💺 Asientos eléctricos con memoria', '📍 GPS / Navegación SYNC 3', '📱 Apple CarPlay / Android Auto', '📷 Cámara de retroceso', '🅿️ Sensores de estacionamiento', '❄️ Climatizador automático', '🔑 Llave de proximidad'],
         image_urls: [
             'https://images.unsplash.com/photo-1551830820-330a71b99659?w=800&q=80',
             'https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=800&q=80',
@@ -281,6 +295,7 @@ export const vehicles = [
         transmission: 'CVT',
         color: 'Plata Sterling',
         description: 'Mitsubishi ASX GLS 2022 con motor MIVEC 2.0L. Pantalla multimedia con Apple CarPlay, cámara de retroceso, climatizador automático y 7 airbags. Confiabilidad japonesa garantizada.',
+        features: ['📷 Cámara de retroceso', '📱 Apple CarPlay / Android Auto', '❄️ Climatizador automático', '🛡️ 7 Airbags', '📍 GPS / Navegación', '🎛️ Control crucero', '🔑 Llave de proximidad', '🅿️ Sensores de estacionamiento'],
         image_urls: [
             'https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=800&q=80',
             'https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=800&q=80',
@@ -300,6 +315,7 @@ export const vehicles = [
         transmission: 'Automática',
         color: 'Negro Zafiro',
         description: 'BMW X1 sDrive20i 2021 con motor TwinPower Turbo 192 HP. iDrive 7.0 con pantalla táctil, Live Cockpit Professional, Head-Up Display y BMW Connected Drive. Lujo y deportividad en un SUV compacto.',
+        features: ['🖥️ iDrive 7.0 / Live Cockpit Pro', '🪟 Head-Up Display', '📍 GPS / Navegación BMW', '💺 Asientos de cuero Dakota', '🔊 Audio HiFi premium', '🛡️ Frenado de emergencia activo', '🅿️ Asistente de estacionamiento', '🔑 Comfort Access (sin llave)'],
         image_urls: [
             'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80',
             'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&q=80',

@@ -163,6 +163,40 @@ export default function VehicleDetailPage({ params }) {
                             <h2>Descripción</h2>
                             <p>{vehicle.description}</p>
                         </div>
+
+                        {/* Features / Equipment */}
+                        {vehicle.features && vehicle.features.length > 0 && (
+                            <div className="detail-description" style={{ marginTop: 'var(--space-xl)' }}>
+                                <h2>Equipamiento técnico</h2>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                                    gap: '10px',
+                                    marginTop: 'var(--space-md)',
+                                }}>
+                                    {vehicle.features.map((feat, i) => (
+                                        <div key={i} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            background: 'var(--color-surface-2, #1e293b)',
+                                            border: '1px solid var(--color-border)',
+                                            borderRadius: '10px',
+                                            padding: '10px 14px',
+                                            fontSize: '0.9rem',
+                                            color: 'var(--color-text-primary)',
+                                        }}>
+                                            <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>
+                                                {feat.split(' ')[0]}
+                                            </span>
+                                            <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                                                {feat.split(' ').slice(1).join(' ')}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Info Panel */}
