@@ -11,6 +11,22 @@ export default function VehicleDetailPage({ params }) {
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
 
+    // Credit simulator state
+    const [creditOpen, setCreditOpen] = useState(false);
+    const [downPct, setDownPct] = useState(20);
+    const [months, setMonths] = useState(48);
+    const [rate, setRate] = useState(0.89); // monthly % typical Chile
+
+    const calcCredit = (price) => {
+        if (!price) return null;
+        const down = Math.round(price * downPct / 100);
+        const financed = price - down;
+        const r = rate / 100;
+        const monthly = r === 0 ? financed / months
+            : Math.round(financed * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1));
+        return { down, financed, monthly };
+    };
+
     useEffect(() => {
         const id = resolvedParams.id;
         // Fetch the specific vehicle
@@ -187,6 +203,55 @@ export default function VehicleDetailPage({ params }) {
                             </div>
 
                             <div className="detail-actions">
+                                {/* Credit Simulator */}
+                                <div style={{ marginBottom: 'var(--space-md)', border: '1px solid var(--color-border)', borderRadius: '12px', overflow: 'hidden' }}>
+                                    <button
+                                        onClick={() => setCreditOpen(o => !o)}
+                                        style={{ width: '100%', padding: '12px 16px', background: 'var(--color-surface-2, #1e293b)', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 }}
+                                    >
+                                        <span>🧮 Simular Crédito</span>
+                                        <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{creditOpen ? '▲ Cerrar' : '▼ Ver cuotas'}</span>
+                                    </button>
+                                    {creditOpen && (() => {
+                                        const cr = calcCredit(vehicle.price);
+                                        return cr ? (
+                                            <div style={{ padding: '16px', background: 'var(--color-surface, #0f172a)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                <div style={{ display: 'flex', gap: '12px' }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Pie: {downPct}%</label>
+                                                        <input type="range" min={10} max={50} step={5} value={downPct}
+                                                            onChange={e => setDownPct(Number(e.target.value))}
+                                                            style={{ width: '100%', accentColor: 'var(--color-primary, #3b82f6)' }} />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Plazo: {months} meses</label>
+                                                        <input type="range" min={12} max={72} step={12} value={months}
+                                                            onChange={e => setMonths(Number(e.target.value))}
+                                                            style={{ width: '100%', accentColor: 'var(--color-primary, #3b82f6)' }} />
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
+                                                    <div style={{ background: 'var(--color-surface-2, #1e293b)', borderRadius: 8, padding: '10px 6px' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: 2 }}>PIE</div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{formatPrice(cr.down)}</div>
+                                                    </div>
+                                                    <div style={{ background: 'var(--color-surface-2, #1e293b)', borderRadius: 8, padding: '10px 6px' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: 2 }}>FINANCIADO</div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{formatPrice(cr.financed)}</div>
+                                                    </div>
+                                                    <div style={{ background: 'var(--color-primary, #3b82f6)', borderRadius: 8, padding: '10px 6px' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.8)', marginBottom: 2 }}>CUOTA/MES</div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{formatPrice(cr.monthly)}</div>
+                                                    </div>
+                                                </div>
+                                                <p style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', margin: 0, textAlign: 'center' }}>
+                                                    Simulación referencial. Tasa {rate}% mensual. Valores reales sujetos a evaluación crediticia.
+                                                </p>
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+
                                 <a
                                     href={`https://wa.me/56912345678?text=${whatsappMessage}`}
                                     target="_blank"
