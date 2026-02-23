@@ -230,6 +230,18 @@ export default function VehicleDetailPage({ params }) {
                                     <span className="detail-spec-label">Año</span>
                                     <span className="detail-spec-value">{vehicle.year}</span>
                                 </div>
+                                {vehicle.body_type && (
+                                    <div className="detail-spec-item">
+                                        <span className="detail-spec-label">Carrocería</span>
+                                        <span className="detail-spec-value">{vehicle.body_type}</span>
+                                    </div>
+                                )}
+                                {vehicle.doors && (
+                                    <div className="detail-spec-item">
+                                        <span className="detail-spec-label">Puertas</span>
+                                        <span className="detail-spec-value">{vehicle.doors}</span>
+                                    </div>
+                                )}
                                 <div className="detail-spec-item">
                                     <span className="detail-spec-label">Estado</span>
                                     <span className="detail-spec-value" style={{ color: 'var(--color-success)' }}>Disponible</span>

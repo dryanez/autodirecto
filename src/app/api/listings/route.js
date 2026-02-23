@@ -95,6 +95,8 @@ function normalizeRow(row) {
         features:     featuresToArray(row.features),
         plate:        row.plate || '',
         motor:        row.motor || '',
+        body_type:    row.body_type || '',
+        doors:        row.doors || null,
         featured:     row.featured || false,
         status:       row.status || 'disponible',
         created_at:   row.created_at || new Date().toISOString(),
