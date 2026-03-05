@@ -1,67 +1,86 @@
 import Link from 'next/link';
 
 export default function VehicleCard({ vehicle }) {
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('es-CL', {
-            style: 'currency',
-            currency: 'CLP',
-            maximumFractionDigits: 0,
-        }).format(price);
-    };
+  const {
+    id,
+    brand,
+    model,
+    year,
+    price,
+    mileage_km,
+    fuel_type,
+    transmission,
+    color,
+    image_urls,
+    featured,
+  } = vehicle;
 
-    const formatMileage = (km) => {
-        return new Intl.NumberFormat('es-CL').format(km);
-    };
+  const formatPrice = (p) =>
+    '$' + (p / 1000000).toFixed(1).replace('.0', '') + 'M';
 
-    return (
-        <Link href={`/catalogo/${vehicle.id}`} className="vehicle-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="vehicle-card-image">
-                <img
-                    src={vehicle.image_urls[0]}
-                    alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
-                    loading="lazy"
-                />
-                {vehicle.featured && (
-                    <div className="vehicle-card-badge">
-                        <span className="badge badge-accent">⭐ Destacado</span>
-                    </div>
-                )}
-            </div>
-            <div className="vehicle-card-body">
-                <h3 className="vehicle-card-title">{vehicle.brand} {vehicle.model}</h3>
-                <p className="vehicle-card-year">{vehicle.year} · {vehicle.color}</p>
-                <div className="vehicle-card-specs">
-                    <span className="vehicle-card-spec">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12,6 12,12 16,14" />
-                        </svg>
-                        {formatMileage(vehicle.mileage_km)} km
-                    </span>
-                    <span className="vehicle-card-spec">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                            <polyline points="14,2 14,8 20,8" />
-                        </svg>
-                        {vehicle.fuel_type}
-                    </span>
-                    <span className="vehicle-card-spec">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                            <line x1="1" y1="10" x2="23" y2="10" />
-                        </svg>
-                        {vehicle.transmission}
-                    </span>
-                </div>
-                <div className="vehicle-card-footer">
-                    <div className="vehicle-card-price">
-                        {formatPrice(vehicle.price)}
-                    </div>
-                    <span className="vehicle-card-link">
-                        Ver más →
-                    </span>
-                </div>
-            </div>
-        </Link>
-    );
+  const formatKm = (km) =>
+    km >= 1000 ? (km / 1000).toFixed(0) + 'k km' : km + ' km';
+
+  return (
+    <Link href={`/catalogo/${id}`} className="vehicle-card">
+      {/* Image */}
+      <div className="vehicle-card-image">
+        <img
+          src={image_urls?.[0] || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=70'}
+          alt={`${brand} ${model} ${year}`}
+          loading="lazy"
+        />
+        {featured && (
+          <div className="vehicle-card-badge">
+            <span className="badge badge-accent">Destacado</span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="vehicle-card-body">
+        <h3 className="vehicle-card-title">
+          {brand} {model}
+        </h3>
+        <p className="vehicle-card-year">
+          {year} · {color}
+        </p>
+
+        {/* Spec pills */}
+        <div className="vehicle-card-specs">
+          <span className="vehicle-card-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+            {formatKm(mileage_km)}
+          </span>
+          <span className="vehicle-card-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+            </svg>
+            {fuel_type}
+          </span>
+          <span className="vehicle-card-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <path d="M6 12h4M14 12h4" />
+            </svg>
+            {transmission}
+          </span>
+        </div>
+
+        {/* Footer */}
+        <div className="vehicle-card-footer">
+          <div className="vehicle-card-price">
+            {formatPrice(price)}
+            <small> CLP</small>
+          </div>
+          <span className="vehicle-card-link">
+            Ver más →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
 }

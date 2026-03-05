@@ -14,10 +14,10 @@ export default function ConsignacionPage() {
                     <span className="badge badge-accent" style={{ marginBottom: 'var(--space-lg)' }}>
                         💰 Servicio de Consignación
                     </span>
-                    <h1 style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>
+                    <h1 className="consignacion-title">
                         Vende tu Auto <span className="gradient-text">Sin Complicaciones</span>
                     </h1>
-                    <p style={{ fontSize: '1.125rem', color: 'var(--color-text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+                    <p className="consignacion-subtitle">
                         Nosotros nos encargamos de todo: publicación, negociación, documentación y transferencia.
                         Tú solo recibes tu dinero. 100% online.
                     </p>
@@ -104,12 +104,13 @@ export default function ConsignacionPage() {
                             src="https://mrcar-cotizacion.vercel.app"
                             title="Cotizador de Vehículos — Auto Directo"
                             width="100%"
-                            height="800"
                             style={{
                                 border: 'none',
                                 borderRadius: 'var(--radius-xl)',
                                 background: 'var(--color-bg-card)',
-                                boxShadow: 'var(--shadow-xl)',
+                                minHeight: '700px',
+                                height: '80vh',
+                                maxHeight: '900px',
                             }}
                             allow="clipboard-write"
                             loading="lazy"

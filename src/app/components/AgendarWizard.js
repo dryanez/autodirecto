@@ -78,14 +78,14 @@ function CalendarPicker({ selectedDate, selectedTime, onSelectDate, onSelectTime
             </div>
 
             {/* Day Headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', marginBottom: 'var(--space-xs)' }}>
+            <div className="wizard-cal-header">
                 {DAYS_OF_WEEK.map(d => (
                     <div key={d} style={{ padding: 'var(--space-xs)', fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{d}</div>
                 ))}
             </div>
 
             {/* Day Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: 'var(--space-lg)' }}>
+            <div className="wizard-cal-days">
                 {days.map((day, i) => {
                     if (day === null) return <div key={`empty-${i}`} />;
                     const disabled = isDateDisabled(viewYear, viewMonth, day);
@@ -122,7 +122,7 @@ function CalendarPicker({ selectedDate, selectedTime, onSelectDate, onSelectTime
                     <h4 style={{ marginBottom: 'var(--space-sm)', color: 'var(--color-text-secondary)' }}>
                         Horarios disponibles para el <span style={{ color: 'var(--color-accent)' }}>{selectedDate.split('-').reverse().join('/')}</span>
                     </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)' }}>
+                    <div className="wizard-time-grid">
                         {TIME_SLOTS.map(time => {
                             const isSelected = selectedTime === time;
                             return (
@@ -485,7 +485,7 @@ export default function AgendarWizard() {
     }
 
     return (
-        <div className="card" style={{ maxWidth: '650px', margin: '0 auto', position: 'relative', overflow: 'hidden' }}>
+        <div className="card wizard-card" style={{ maxWidth: '650px', margin: '0 auto', position: 'relative', overflow: 'hidden' }}>
             {/* Progress Bar */}
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'var(--color-bg-secondary)' }}>
                 <div style={{
@@ -496,9 +496,9 @@ export default function AgendarWizard() {
                 }} />
             </div>
 
-            <div style={{ padding: 'var(--space-xl)' }}>
+            <div className="wizard-body">
                 {/* Step Title */}
-                <h2 style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
+                <h2 style={{ textAlign: 'center', marginBottom: 'var(--space-xl)', fontSize: 'clamp(1.125rem, 4vw, 1.5rem)' }}>
                     {step === 1 && '¿Cuál es tu nombre?'}
                     {step === 2 && '¿Cuál es tu RUT?'}
                     {step === 3 && '¿Cuál es tu teléfono?'}
@@ -535,7 +535,7 @@ export default function AgendarWizard() {
 
                         {/* STEP 1: Name */}
                         {step === 1 && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                            <div className="wizard-name-grid">
                                 <input
                                     type="text"
                                     className="input-field"
@@ -574,7 +574,7 @@ export default function AgendarWizard() {
 
                         {/* STEP 3: Phone with Country Code */}
                         {step === 3 && (
-                            <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'stretch' }}>
+                            <div className="wizard-phone-row">
                                 <select
                                     className="input-field"
                                     value={formData.countryCode}
@@ -784,7 +784,7 @@ export default function AgendarWizard() {
                         )}
 
                         {/* Navigation Buttons */}
-                        <div style={{ display: 'flex', gap: 'var(--space-md)', marginTop: 'var(--space-xl)' }}>
+                        <div className="wizard-nav-buttons">
                             {step > 1 && (
                                 <button onClick={prevStep} className="btn btn-secondary" style={{ flex: 1 }}>
                                     Volver
