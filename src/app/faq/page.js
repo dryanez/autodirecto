@@ -72,7 +72,7 @@ export default function FAQPage() {
                         </p>
                         <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', flexWrap: 'wrap' }}>
                             <a
-                                href="https://wa.me/56912345678?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Auto%20Directo"
+                                href="https://wa.me/56940441470?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Auto%20Directo"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-whatsapp"

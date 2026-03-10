@@ -284,7 +284,7 @@ export default function Home() {
                 Ver Vehículos
               </Link>
               <Link
-                href="https://wa.me/56962320585?text=Hola%2C%20me%20interesa%20saber%20más"
+                href="https://wa.me/56940441470?text=Hola%2C%20me%20interesa%20saber%20más"
                 target="_blank"
                 className="btn btn-whatsapp btn-lg"
               >

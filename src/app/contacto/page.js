@@ -46,8 +46,8 @@ export default function ContactoPage() {
                                     <div>
                                         <h3>WhatsApp</h3>
                                         <p>
-                                            <a href="https://wa.me/56912345678" target="_blank" rel="noopener noreferrer">
-                                                +56 9 1234 5678
+                                            <a href="https://wa.me/56940441470" target="_blank" rel="noopener noreferrer">
+                                                +56 9 4044 1470
                                             </a>
                                         </p>
                                         <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
@@ -69,7 +69,7 @@ export default function ContactoPage() {
                                     <div>
                                         <h3>Teléfono</h3>
                                         <p>
-                                            <a href="tel:+56912345678">+56 9 1234 5678</a>
+                                            <a href="tel:+56940441470">+56 9 4044 1470</a>
                                         </p>
                                         <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
                                             Lunes a Viernes, 9:00 - 18:00
@@ -148,7 +148,7 @@ export default function ContactoPage() {
                             {/* Quick Actions */}
                             <div style={{ marginTop: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                                 <a
-                                    href="https://wa.me/56912345678?text=Hola%2C%20tengo%20una%20consulta%20sobre%20Auto%20Directo"
+                                    href="https://wa.me/56940441470?text=Hola%2C%20tengo%20una%20consulta%20sobre%20Auto%20Directo"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="btn btn-whatsapp"
@@ -156,7 +156,7 @@ export default function ContactoPage() {
                                 >
                                     💬 Chat por WhatsApp
                                 </a>
-                                <a href="tel:+56912345678" className="btn btn-secondary" style={{ width: '100%' }}>
+                                <a href="tel:+56940441470" className="btn btn-secondary" style={{ width: '100%' }}>
                                     📞 Llamar Ahora
                                 </a>
                             </div>

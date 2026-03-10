@@ -67,7 +67,7 @@ const organizationJsonLd = {
   description: 'Plataforma digital de compra y venta de autos 100% online en Chile.',
   url: 'https://autodirecto.cl',
   logo: 'https://autodirecto.cl/logo.png',
-  telephone: '+56912345678',
+  telephone: '+56940441470',
   email: 'contacto@autodirecto.cl',
   address: {
     '@type': 'PostalAddress',

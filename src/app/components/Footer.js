@@ -66,7 +66,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="tel:+56962320585">+56 9 6232 0585</a>
+                <a href="tel:+56940441470">+56 9 4044 1470</a>
               </li>
               <li>
                 <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>

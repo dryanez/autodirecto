@@ -299,7 +299,7 @@ export default function VehicleDetailPage({ params }) {
                                 </div>
 
                                 <a
-                                    href={`https://wa.me/56912345678?text=${whatsappMessage}`}
+                                    href={`https://wa.me/56940441470?text=${whatsappMessage}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="btn btn-whatsapp"
@@ -314,7 +314,7 @@ export default function VehicleDetailPage({ params }) {
                                 <Link href="/contacto" className="btn btn-secondary" style={{ width: '100%' }}>
                                     📧 Enviar Consulta
                                 </Link>
-                                <a href="tel:+56912345678" className="btn btn-secondary" style={{ width: '100%' }}>
+                                <a href="tel:+56940441470" className="btn btn-secondary" style={{ width: '100%' }}>
                                     📞 Llamar Ahora
                                 </a>
                             </div>

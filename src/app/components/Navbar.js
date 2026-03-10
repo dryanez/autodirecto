@@ -43,7 +43,7 @@ export default function Navbar() {
           {/* CTA + hamburger */}
           <div className="navbar-cta">
             <Link
-              href="https://wa.me/56962320585?text=Hola%2C%20me%20interesa%20saber%20más"
+              href="https://wa.me/56940441470?text=Hola%2C%20me%20interesa%20saber%20más"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-whatsapp btn-sm"
@@ -76,7 +76,7 @@ export default function Navbar() {
           </Link>
         ))}
         <Link
-          href="https://wa.me/56962320585?text=Hola%2C%20me%20interesa%20saber%20más"
+          href="https://wa.me/56940441470?text=Hola%2C%20me%20interesa%20saber%20más"
           target="_blank"
           className="btn btn-whatsapp"
           style={{ marginTop: '0.5rem', textAlign: 'center' }}
