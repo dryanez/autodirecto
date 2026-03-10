@@ -73,7 +73,7 @@ async function sendConfirmationEmail({ firstName, lastName, email, phone, plate,
         </div>`;
 
         await resend.emails.send({
-            from:    'Auto Directo <onboarding@resend.dev>',
+            from:    'Auto Directo <contacto@autodirecto.cl>',
             to:      ['felipe@autodirecto.cl'],
             subject: `📅 Nueva Cita: ${firstName} ${lastName} — ${car} — ${appointmentDate?.split('T')[0] || appointmentDate} ${appointmentTime}`,
             html,
