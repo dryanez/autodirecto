@@ -1,5 +1,88 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase';
+import { Resend } from 'resend';
+
+// ─── Notification helpers ────────────────────────────────────────────────────
+
+// Send WhatsApp via CallMeBot
+async function sendCallMeBot(message) {
+    try {
+        const phone   = '4917632407062';
+        const apikey  = '4106204';
+        const encoded = encodeURIComponent(message);
+        const url     = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encoded}&apikey=${apikey}`;
+        await fetch(url);
+        console.log('[Appointments] ✅ WhatsApp notification sent');
+    } catch (err) {
+        console.error('[Appointments] ❌ CallMeBot error:', err.message);
+    }
+}
+
+// Send confirmation email via Resend
+async function sendConfirmationEmail({ firstName, lastName, email, phone, plate, carData, appointmentDate, appointmentTime, commune, region }) {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+        console.warn('[Appointments] ⚠️  RESEND_API_KEY not set — skipping email');
+        return;
+    }
+    try {
+        const resend = new Resend(resendKey);
+        const car    = carData?.make && carData?.model
+            ? `${carData.make} ${carData.model}${carData.year ? ` (${carData.year})` : ''}`
+            : plate;
+
+        const html = `
+        <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
+          <div style="background:#171719;padding:24px;text-align:center;border-radius:12px 12px 0 0;">
+            <img src="https://mrcar-cotizacion.vercel.app/static/logo-rounded.png"
+                 alt="Auto Directo" style="width:80px;height:80px;border-radius:50%;object-fit:contain;padding:8px;background:#fff;">
+            <h2 style="color:#f86120;margin:12px 0 0;">Auto Directo</h2>
+          </div>
+
+          <div style="background:#fff;border:1px solid #eee;padding:28px;border-radius:0 0 12px 12px;">
+            <h3 style="color:#1a202c;margin-top:0;">📅 Nueva Cita Agendada</h3>
+
+            <table style="width:100%;border-collapse:collapse;font-size:15px;">
+              <tr><td style="padding:8px 0;color:#666;width:40%;">👤 Cliente</td>
+                  <td style="padding:8px 0;font-weight:600;">${firstName} ${lastName}</td></tr>
+              <tr style="background:#f9f9f9;">
+                  <td style="padding:8px 4px;color:#666;">📱 Teléfono</td>
+                  <td style="padding:8px 4px;font-weight:600;">${phone}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;">📧 Email</td>
+                  <td style="padding:8px 0;font-weight:600;">${email || '—'}</td></tr>
+              <tr style="background:#f9f9f9;">
+                  <td style="padding:8px 4px;color:#666;">🚗 Vehículo</td>
+                  <td style="padding:8px 4px;font-weight:600;">${car}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;">🔖 Patente</td>
+                  <td style="padding:8px 0;font-weight:600;">${plate}</td></tr>
+              <tr style="background:#f9f9f9;">
+                  <td style="padding:8px 4px;color:#666;">📍 Ubicación</td>
+                  <td style="padding:8px 4px;font-weight:600;">${commune || ''} ${region ? `(${region})` : ''}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;">📅 Fecha</td>
+                  <td style="padding:8px 0;font-weight:700;color:#f86120;font-size:17px;">${appointmentDate?.split('T')[0] || appointmentDate}</td></tr>
+              <tr style="background:#f9f9f9;">
+                  <td style="padding:8px 4px;color:#666;">🕐 Hora</td>
+                  <td style="padding:8px 4px;font-weight:700;color:#f86120;font-size:17px;">${appointmentTime} hrs</td></tr>
+            </table>
+
+            <div style="margin-top:24px;padding:14px;background:#fff8f5;border:1px solid #f86120;border-radius:8px;font-size:13px;color:#555;">
+              💡 Recuerda contactar al cliente <strong>un día antes</strong> para confirmar la visita.
+            </div>
+          </div>
+          <p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">Auto Directo — Sistema de Gestión de Citas</p>
+        </div>`;
+
+        await resend.emails.send({
+            from:    'Auto Directo <onboarding@resend.dev>',
+            to:      ['felipe@autodirecto.cl'],
+            subject: `📅 Nueva Cita: ${firstName} ${lastName} — ${car} — ${appointmentDate?.split('T')[0] || appointmentDate} ${appointmentTime}`,
+            html,
+        });
+        console.log('[Appointments] ✅ Email sent to felipe@autodirecto.cl');
+    } catch (err) {
+        console.error('[Appointments] ❌ Resend error:', err.message);
+    }
+}
 
 /**
  * POST /api/appointments
@@ -97,6 +180,20 @@ export async function POST(request) {
                 { status: 500 }
             );
         }
+
+        // ─── Notifications (non-blocking) ────────────────────────────────────
+        const car = carData?.make && carData?.model
+            ? `${carData.make} ${carData.model}${carData.year ? ` ${carData.year}` : ''}`
+            : plate.toUpperCase();
+
+        const dateDisplay = appointmentDate?.split('T')[0] || appointmentDate;
+
+        // 1. WhatsApp via CallMeBot
+        const waMsg = `🚗 NUEVA CITA - Auto Directo\n\n👤 ${firstName} ${lastName}\n📱 ${countryCode} ${phone}\n🔖 Patente: ${plate.toUpperCase()}\n🚘 ${car}\n📅 Fecha: ${dateDisplay}\n🕐 Hora: ${appointmentTime} hrs\n📍 ${commune || ''}, ${region || ''}`;
+        sendCallMeBot(waMsg);
+
+        // 2. Email via Resend
+        sendConfirmationEmail({ firstName, lastName, email, phone, plate: plate.toUpperCase(), carData, appointmentDate, appointmentTime, commune, region });
 
         return NextResponse.json({
             success: true,
