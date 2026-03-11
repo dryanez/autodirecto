@@ -1,8 +1,16 @@
 import Link from 'next/link';
 
 export const metadata = {
-    title: 'Quiénes Somos',
-    description: 'Conoce Auto Directo, la plataforma 100% online de compra y venta de autos en Chile. Operamos desde Viña del Mar con cobertura nacional.',
+    title: 'Quiénes Somos — Auto Directo, Automotora 100% Online en Chile',
+    description: 'Conoce Auto Directo, la plataforma 100% online de compra y venta de autos en Chile. Operamos desde Viña del Mar con cobertura nacional. Parte de Wiackowska Group SpA.',
+    alternates: {
+        canonical: 'https://autodirecto.cl/nosotros',
+    },
+    openGraph: {
+        title: 'Quiénes Somos | Auto Directo',
+        description: 'La primera plataforma 100% digital de consignación automotriz en Chile. Desde Viña del Mar con cobertura nacional.',
+        url: 'https://autodirecto.cl/nosotros',
+    },
 };
 
 export default function NosotrosPage() {

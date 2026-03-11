@@ -2,12 +2,44 @@ import Link from 'next/link';
 import VehicleCard from './components/VehicleCard';
 import { vehicles, testimonials, brands } from '@/lib/mockData';
 
+// JSON-LD for "How it works" process
+const howToJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'Cómo comprar o vender tu auto en Auto Directo',
+  description: 'Comprar o vender tu auto nunca fue tan fácil. 3 pasos simples para completar tu transacción 100% online.',
+  step: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      name: 'Publica o Busca',
+      text: 'Sube tu vehículo o explora nuestro catálogo verificado con inspección certificada.',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 2,
+      name: 'Conectamos',
+      text: 'Gestionamos interesados, negociaciones y toda la documentación legal necesaria.',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 3,
+      name: 'Listo',
+      text: 'Transferencia segura y pago garantizado. Sin sorpresas ni costos ocultos.',
+    },
+  ],
+};
+
 export default function Home() {
   const featuredVehicles = vehicles.filter((v) => v.featured).slice(0, 6);
   const displayTestimonials = testimonials.slice(0, 3);
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
+      />
       {/* ═══════════════════ HERO ═══════════════════ */}
       <section className="hero">
         <div className="hero-image-wrap">

@@ -2,12 +2,55 @@ import Link from 'next/link';
 
 export const metadata = {
     title: 'Consignación — Vende tu Auto Sin Complicaciones',
-    description: 'Cotiza y vende tu auto con Auto Directo. Ingresa tu patente y obtén una cotización instantánea. Servicio 100% online desde Viña del Mar.',
+    description: 'Cotiza y vende tu auto con Auto Directo. Ingresa tu patente y obtén una cotización instantánea. Servicio 100% online desde Viña del Mar. Comisión transparente del 3.9% + IVA.',
+    alternates: {
+        canonical: 'https://autodirecto.cl/consignacion',
+    },
+    openGraph: {
+        title: 'Consignación de Vehículos | Auto Directo',
+        description: 'Vende tu auto sin complicaciones. Nosotros publicamos, negociamos y gestionamos todo. Tiempo promedio: 14 días.',
+        url: 'https://autodirecto.cl/consignacion',
+    },
+};
+
+// JSON-LD Service schema for consignación
+const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'Consignación de Vehículos',
+    description: 'Servicio de consignación de vehículos 100% online. Publicamos, negociamos y gestionamos la venta completa de tu auto. Comisión transparente del 3.9% + IVA. Tiempo promedio de venta: 14 días.',
+    provider: {
+        '@type': 'AutoDealer',
+        '@id': 'https://autodirecto.cl/#organization',
+        name: 'Auto Directo',
+    },
+    serviceType: 'Consignación de vehículos',
+    areaServed: { '@type': 'Country', name: 'Chile' },
+    url: 'https://autodirecto.cl/consignacion',
+    offers: {
+        '@type': 'Offer',
+        description: 'Comisión del 3.9% + IVA sobre el precio de venta',
+        priceCurrency: 'CLP',
+    },
+    hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'Servicios incluidos',
+        itemListElement: [
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Publicación profesional en múltiples plataformas' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Gestión de interesados y negociación' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Transferencia legal en notaría' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Inspección vehicular certificada' } },
+        ],
+    },
 };
 
 export default function ConsignacionPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+            />
             {/* Hero */}
             <div className="consignacion-hero">
                 <div className="container" style={{ position: 'relative' }}>

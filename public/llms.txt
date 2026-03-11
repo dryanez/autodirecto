@@ -1,0 +1,32 @@
+# Auto Directo
+
+> Plataforma 100% online de compra y venta de vehículos en Chile. Consignación transparente, asesoría personalizada y transferencia segura desde Viña del Mar con cobertura nacional.
+
+## Páginas Principales
+
+- [Inicio](https://autodirecto.cl/): Página principal con catálogo destacado, proceso de compra/venta, y acceso a todos los servicios de Auto Directo.
+- [Catálogo de Vehículos](https://autodirecto.cl/catalogo): Listado completo de vehículos disponibles para compra inmediata con filtros por marca, precio, combustible y transmisión.
+- [Consignación](https://autodirecto.cl/consignacion): Servicio de consignación de vehículos — cómo funciona el proceso, beneficios, y formulario para consignar tu auto.
+- [Nosotros](https://autodirecto.cl/nosotros): Información sobre Auto Directo, misión, valores, equipo y trayectoria como parte de Wiackowska Group SpA.
+- [Contacto](https://autodirecto.cl/contacto): Información de contacto — WhatsApp, email, dirección en Viña del Mar, y formulario de consulta.
+- [Preguntas Frecuentes](https://autodirecto.cl/faq): Respuestas a las preguntas más comunes sobre consignación, comisiones, documentos necesarios, plazos y cobertura.
+- [Blog](https://autodirecto.cl/blog): Guías, consejos y noticias sobre el mercado automotriz chileno — tasación, transferencia, comparativas y tendencias.
+
+## Servicios
+
+- Consignación de Vehículos: Publicamos, negociamos y gestionamos la venta completa de tu auto. Comisión transparente del 3.9% + IVA. Sin compromiso de permanencia.
+- Compra de Vehículos: Catálogo verificado con inspección certificada, informe vehicular completo y financiamiento disponible.
+- Financiamiento Automotriz: Crédito automotriz a través de instituciones financieras asociadas con condiciones flexibles.
+- Transferencia Legal: Gestión completa de documentación y transferencia en notaría.
+- Inspección Vehicular: Revisión mecánica completa, verificación de kilometraje, estado de pintura/carrocería y chequeo legal.
+
+## Datos de la Empresa
+
+- Razón Social: Wiackowska Group SpA
+- Nombre Comercial: Auto Directo
+- Ubicación: Av. Bosques de Montemar 30, Of. 316, Viña del Mar, Chile
+- Teléfono: +56 9 4044 1470
+- Email: contacto@autodirecto.cl
+- Sitio Web: https://autodirecto.cl
+- Instagram: https://instagram.com/autodirecto.cl
+- Facebook: https://facebook.com/autodirecto.cl

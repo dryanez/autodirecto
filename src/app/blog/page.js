@@ -1,8 +1,16 @@
 import Link from 'next/link';
 
 export const metadata = {
-    title: 'Blog — Consejos y Noticias Automotrices',
-    description: 'Lee nuestras guías, consejos y noticias sobre el mundo automotriz en Chile. Mantén tu auto en las mejores condiciones y toma decisiones informadas.',
+    title: 'Blog — Consejos y Noticias Automotrices Chile 2026',
+    description: 'Lee nuestras guías, consejos y noticias sobre el mundo automotriz en Chile. Tasación de vehículos, transferencia, consignación, rankings y tendencias 2026.',
+    alternates: {
+        canonical: 'https://autodirecto.cl/blog',
+    },
+    openGraph: {
+        title: 'Blog Automotriz | Auto Directo',
+        description: 'Guías prácticas, rankings de vehículos y todo lo que necesitas saber para comprar o vender tu auto en Chile.',
+        url: 'https://autodirecto.cl/blog',
+    },
 };
 
 const blogPosts = [
@@ -56,9 +64,39 @@ const blogPosts = [
     },
 ];
 
+// JSON-LD ItemList for blog articles — helps AI understand content catalog
+const blogListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Blog Auto Directo — Consejos Automotrices Chile',
+    description: 'Guías, consejos y noticias sobre el mercado automotriz chileno.',
+    url: 'https://autodirecto.cl/blog',
+    numberOfItems: blogPosts.length,
+    itemListElement: blogPosts.map((post, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+            '@type': 'Article',
+            headline: post.title,
+            description: post.excerpt,
+            datePublished: new Date(
+                post.date.replace(/(\d+) (\w+) (\d+)/, '$2 $1, $3')
+                    .replace('Ene', 'Jan').replace('Feb', 'Feb').replace('Mar', 'Mar')
+            ).toISOString().split('T')[0],
+            author: { '@type': 'Organization', name: 'Auto Directo' },
+            publisher: { '@type': 'Organization', '@id': 'https://autodirecto.cl/#organization' },
+            articleSection: post.category,
+        },
+    })),
+};
+
 export default function BlogPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(blogListJsonLd) }}
+            />
             <div className="page-header">
                 <div className="container" style={{ position: 'relative' }}>
                     <span className="badge badge-accent" style={{ marginBottom: 'var(--space-lg)' }}>
