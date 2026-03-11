@@ -56,9 +56,6 @@ export const metadata = {
   alternates: {
     canonical: 'https://autodirecto.cl',
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
 };
 
 // JSON-LD Structured Data — Organization (AutoDealer)
