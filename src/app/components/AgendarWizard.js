@@ -225,6 +225,7 @@ export default function AgendarWizard() {
         plate: '',
         mileage: '',
         version: '',
+        referralSource: '',
         appointmentDate: '',
         appointmentTime: ''
     });
@@ -370,8 +371,16 @@ export default function AgendarWizard() {
             }
         }
 
-        // Special handling for Scheduling (Step 8)
+        // Step 8: How did you find us?
         if (step === 8) {
+            if (!formData.referralSource) {
+                setError('Por favor selecciona cómo nos conociste');
+                return;
+            }
+        }
+
+        // Special handling for Scheduling (Step 9)
+        if (step === 9) {
             if (!formData.appointmentDate || !formData.appointmentTime) {
                 setError('Selecciona una fecha y un horario');
                 return;
@@ -491,7 +500,7 @@ export default function AgendarWizard() {
                 <div style={{
                     height: '100%',
                     background: 'var(--color-accent-gradient)',
-                    width: `${(step / 8) * 100}%`,
+                    width: `${(step / 9) * 100}%`,
                     transition: 'width 0.3s ease'
                 }} />
             </div>
@@ -506,7 +515,8 @@ export default function AgendarWizard() {
                     {step === 5 && '¿Dónde te encuentras?'}
                     {step === 6 && '¿Cuál es la patente?'}
                     {step === 7 && 'Detalles del Vehículo'}
-                    {step === 8 && 'Elige un horario'}
+                    {step === 8 && '¿Cómo nos conociste?'}
+                    {step === 9 && 'Elige un horario'}
                 </h2>
 
                 {/* Loading Grid */}
@@ -773,8 +783,52 @@ export default function AgendarWizard() {
                             </div>
                         )}
 
-                        {/* STEP 8: Calendar Picker */}
+                        {/* STEP 8: ¿Cómo nos conociste? */}
                         {step === 8 && (
+                            <div style={{ display: 'grid', gap: 'var(--space-md)', maxWidth: '400px', margin: '0 auto' }}>
+                                {[
+                                    { value: 'facebook', emoji: '📘', label: 'Facebook', color: '#1877F2' },
+                                    { value: 'instagram', emoji: '📸', label: 'Instagram', color: '#E4405F' },
+                                    { value: 'website', emoji: '🌐', label: 'Sitio Web', color: '#3B82F6' },
+                                    { value: 'otro', emoji: '💬', label: 'Otro', color: '#6B7280' },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => updateFormData('referralSource', opt.value)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--space-md)',
+                                            padding: 'var(--space-md) var(--space-lg)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: formData.referralSource === opt.value
+                                                ? `2px solid ${opt.color}`
+                                                : '2px solid var(--color-border)',
+                                            background: formData.referralSource === opt.value
+                                                ? `${opt.color}11`
+                                                : 'var(--color-bg-secondary)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontSize: '1.1rem',
+                                            fontWeight: formData.referralSource === opt.value ? 600 : 400,
+                                            color: formData.referralSource === opt.value
+                                                ? opt.color
+                                                : 'var(--color-text-primary)',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '1.5rem' }}>{opt.emoji}</span>
+                                        {opt.label}
+                                        {formData.referralSource === opt.value && (
+                                            <span style={{ marginLeft: 'auto', fontSize: '1.2rem' }}>✓</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* STEP 9: Calendar Picker */}
+                        {step === 9 && (
                             <CalendarPicker
                                 selectedDate={formData.appointmentDate}
                                 selectedTime={formData.appointmentTime}
@@ -791,7 +845,7 @@ export default function AgendarWizard() {
                                 </button>
                             )}
                             <button onClick={handleNext} className="btn btn-primary" style={{ flex: 1 }}>
-                                {step === 6 ? 'Buscar Vehículo' : step === 8 ? 'Confirmar Cita' : 'Continuar'}
+                                {step === 6 ? 'Buscar Vehículo' : step === 9 ? 'Confirmar Cita' : 'Continuar'}
                             </button>
                         </div>
                     </div>

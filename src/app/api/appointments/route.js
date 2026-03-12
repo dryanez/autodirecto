@@ -25,60 +25,133 @@ async function sendConfirmationEmail({ firstName, lastName, email, phone, plate,
         console.warn('[Appointments] ⚠️  RESEND_API_KEY not set — skipping email');
         return;
     }
+    const resend = new Resend(resendKey);
+    const car = carData?.make && carData?.model
+        ? `${carData.make} ${carData.model}${carData.year ? ` (${carData.year})` : ''}`
+        : plate;
+    const dateDisplay = appointmentDate?.split('T')[0] || appointmentDate;
+
+    // ── 1. CLIENT confirmation email ──────────────────────────────────────────
+    const clientHtml = `
+    <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
+      <div style="background:#171719;padding:28px;text-align:center;border-radius:12px 12px 0 0;">
+        <img src="https://mrcar-cotizacion.vercel.app/static/logo-rounded.png"
+             alt="Auto Directo" style="width:80px;height:80px;border-radius:50%;object-fit:contain;padding:8px;background:#fff;">
+        <h2 style="color:#f86120;margin:14px 0 4px;">Auto Directo</h2>
+        <p style="color:#aaa;margin:0;font-size:13px;">autodirecto.cl</p>
+      </div>
+
+      <div style="background:#fff;border:1px solid #eee;padding:32px;border-radius:0 0 12px 12px;">
+        <h2 style="color:#1a202c;margin-top:0;">✅ ¡Tu cita está confirmada, ${firstName}!</h2>
+        <p style="color:#555;font-size:15px;line-height:1.6;">
+          Hemos registrado tu inspección gratuita con éxito. 
+          Aquí tienes el resumen de tu cita:
+        </p>
+
+        <div style="background:#f9f9f9;border-radius:10px;padding:20px;margin:24px 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:15px;">
+            <tr>
+              <td style="padding:10px 8px;color:#888;width:35%;">📅 Fecha</td>
+              <td style="padding:10px 8px;font-weight:700;color:#f86120;font-size:18px;">${dateDisplay}</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+              <td style="padding:10px 8px;color:#888;">🕐 Hora</td>
+              <td style="padding:10px 8px;font-weight:700;color:#f86120;font-size:18px;">${appointmentTime} hrs</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+              <td style="padding:10px 8px;color:#888;">🚗 Vehículo</td>
+              <td style="padding:10px 8px;font-weight:600;">${car}</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+              <td style="padding:10px 8px;color:#888;">🔖 Patente</td>
+              <td style="padding:10px 8px;font-weight:600;">${plate}</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+              <td style="padding:10px 8px;color:#888;">📍 Lugar</td>
+              <td style="padding:10px 8px;font-weight:600;">${commune || ''}${region ? `, ${region}` : ''}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background:#fff8f5;border-left:4px solid #f86120;padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:24px;">
+          <p style="margin:0;font-size:14px;color:#555;line-height:1.7;">
+            📞 <strong>¿Qué sigue?</strong><br>
+            Un ejecutivo de Auto Directo se comunicará contigo al 
+            <strong>${phone}</strong> dentro de las próximas <strong>24 horas</strong> 
+            para confirmar los detalles de la visita.
+          </p>
+        </div>
+
+        <p style="font-size:13px;color:#888;line-height:1.6;">
+          ¿Tienes alguna duda? Escríbenos por WhatsApp al 
+          <a href="https://wa.me/56940441470" style="color:#f86120;text-decoration:none;">+56 9 4044 1470</a>
+          o responde este correo.
+        </p>
+      </div>
+
+      <div style="text-align:center;padding:20px;">
+        <a href="https://autodirecto.cl" style="color:#f86120;font-size:12px;text-decoration:none;">autodirecto.cl</a>
+        <span style="color:#ccc;margin:0 8px;">·</span>
+        <span style="color:#aaa;font-size:12px;">Wiackowska Group SpA</span>
+      </div>
+    </div>`;
+
+    // ── 2. INTERNAL admin notification ────────────────────────────────────────
+    const adminHtml = `
+    <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
+      <div style="background:#171719;padding:20px;text-align:center;border-radius:12px 12px 0 0;">
+        <h2 style="color:#f86120;margin:0;">� Nueva Cita Agendada</h2>
+        <p style="color:#aaa;margin:6px 0 0;font-size:13px;">Auto Directo — Sistema de Gestión</p>
+      </div>
+      <div style="background:#fff;border:1px solid #eee;padding:28px;border-radius:0 0 12px 12px;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;">
+          <tr><td style="padding:9px 0;color:#666;width:38%;">👤 Cliente</td>
+              <td style="padding:9px 0;font-weight:600;">${firstName} ${lastName}</td></tr>
+          <tr style="background:#f9f9f9;">
+              <td style="padding:9px 4px;color:#666;">📱 Teléfono</td>
+              <td style="padding:9px 4px;font-weight:600;">${phone}</td></tr>
+          <tr><td style="padding:9px 0;color:#666;">📧 Email</td>
+              <td style="padding:9px 0;font-weight:600;">${email || '—'}</td></tr>
+          <tr style="background:#f9f9f9;">
+              <td style="padding:9px 4px;color:#666;">🚗 Vehículo</td>
+              <td style="padding:9px 4px;font-weight:600;">${car}</td></tr>
+          <tr><td style="padding:9px 0;color:#666;">🔖 Patente</td>
+              <td style="padding:9px 0;font-weight:600;">${plate}</td></tr>
+          <tr style="background:#f9f9f9;">
+              <td style="padding:9px 4px;color:#666;">📍 Ubicación</td>
+              <td style="padding:9px 4px;font-weight:600;">${commune || ''}${region ? `, ${region}` : ''}</td></tr>
+          <tr><td style="padding:9px 0;color:#666;">📅 Fecha</td>
+              <td style="padding:9px 0;font-weight:700;color:#f86120;font-size:17px;">${dateDisplay}</td></tr>
+          <tr style="background:#f9f9f9;">
+              <td style="padding:9px 4px;color:#666;">🕐 Hora</td>
+              <td style="padding:9px 4px;font-weight:700;color:#f86120;font-size:17px;">${appointmentTime} hrs</td></tr>
+        </table>
+        <div style="margin-top:20px;padding:12px 16px;background:#fff8f5;border:1px solid #f86120;border-radius:8px;font-size:13px;color:#555;">
+          ⚡ Contactar al cliente dentro de las próximas <strong>24 horas</strong>.
+        </div>
+      </div>
+    </div>`;
+
     try {
-        const resend = new Resend(resendKey);
-        const car    = carData?.make && carData?.model
-            ? `${carData.make} ${carData.model}${carData.year ? ` (${carData.year})` : ''}`
-            : plate;
+        // Send to client (if they provided an email)
+        if (email) {
+            await resend.emails.send({
+                from:    'Auto Directo <contacto@autodirecto.cl>',
+                to:      [email],
+                subject: `✅ Cita confirmada — ${dateDisplay} a las ${appointmentTime} hrs`,
+                html:    clientHtml,
+            });
+            console.log(`[Appointments] ✅ Confirmation email sent to client: ${email}`);
+        }
 
-        const html = `
-        <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
-          <div style="background:#171719;padding:24px;text-align:center;border-radius:12px 12px 0 0;">
-            <img src="https://mrcar-cotizacion.vercel.app/static/logo-rounded.png"
-                 alt="Auto Directo" style="width:80px;height:80px;border-radius:50%;object-fit:contain;padding:8px;background:#fff;">
-            <h2 style="color:#f86120;margin:12px 0 0;">Auto Directo</h2>
-          </div>
-
-          <div style="background:#fff;border:1px solid #eee;padding:28px;border-radius:0 0 12px 12px;">
-            <h3 style="color:#1a202c;margin-top:0;">📅 Nueva Cita Agendada</h3>
-
-            <table style="width:100%;border-collapse:collapse;font-size:15px;">
-              <tr><td style="padding:8px 0;color:#666;width:40%;">👤 Cliente</td>
-                  <td style="padding:8px 0;font-weight:600;">${firstName} ${lastName}</td></tr>
-              <tr style="background:#f9f9f9;">
-                  <td style="padding:8px 4px;color:#666;">📱 Teléfono</td>
-                  <td style="padding:8px 4px;font-weight:600;">${phone}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;">📧 Email</td>
-                  <td style="padding:8px 0;font-weight:600;">${email || '—'}</td></tr>
-              <tr style="background:#f9f9f9;">
-                  <td style="padding:8px 4px;color:#666;">🚗 Vehículo</td>
-                  <td style="padding:8px 4px;font-weight:600;">${car}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;">🔖 Patente</td>
-                  <td style="padding:8px 0;font-weight:600;">${plate}</td></tr>
-              <tr style="background:#f9f9f9;">
-                  <td style="padding:8px 4px;color:#666;">📍 Ubicación</td>
-                  <td style="padding:8px 4px;font-weight:600;">${commune || ''} ${region ? `(${region})` : ''}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;">📅 Fecha</td>
-                  <td style="padding:8px 0;font-weight:700;color:#f86120;font-size:17px;">${appointmentDate?.split('T')[0] || appointmentDate}</td></tr>
-              <tr style="background:#f9f9f9;">
-                  <td style="padding:8px 4px;color:#666;">🕐 Hora</td>
-                  <td style="padding:8px 4px;font-weight:700;color:#f86120;font-size:17px;">${appointmentTime} hrs</td></tr>
-            </table>
-
-            <div style="margin-top:24px;padding:14px;background:#fff8f5;border:1px solid #f86120;border-radius:8px;font-size:13px;color:#555;">
-              💡 Recuerda contactar al cliente <strong>un día antes</strong> para confirmar la visita.
-            </div>
-          </div>
-          <p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">Auto Directo — Sistema de Gestión de Citas</p>
-        </div>`;
-
+        // Always send internal notification to Felipe
         await resend.emails.send({
             from:    'Auto Directo <contacto@autodirecto.cl>',
             to:      ['felipe@autodirecto.cl'],
-            subject: `📅 Nueva Cita: ${firstName} ${lastName} — ${car} — ${appointmentDate?.split('T')[0] || appointmentDate} ${appointmentTime}`,
-            html,
+            subject: `📅 Nueva Cita: ${firstName} ${lastName} — ${car} — ${dateDisplay} ${appointmentTime}`,
+            html:    adminHtml,
         });
-        console.log('[Appointments] ✅ Email sent to felipe@autodirecto.cl');
+        console.log('[Appointments] ✅ Admin notification sent to felipe@autodirecto.cl');
     } catch (err) {
         console.error('[Appointments] ❌ Resend error:', err.message);
     }
@@ -114,6 +187,7 @@ export async function POST(request) {
             plate,
             mileage,
             version,
+            referralSource,
             appointmentDate,
             appointmentTime,
             carData // { make, model, year, ... }
@@ -161,17 +235,31 @@ export async function POST(request) {
             // Matching / status fields
             status: 'agendado',
             source: 'autodirecto',
+            referral_source: referralSource || null,
             matched: false,
             matched_funnel_id: null,
             created_at: new Date().toISOString()
         };
 
         // Save to Supabase
-        const { data, error } = await supabaseAdmin
+        let insertResult = await supabaseAdmin
             .from('appointments')
             .insert([appointmentRecord])
             .select()
             .single();
+
+        // If referral_source column doesn't exist yet, retry without it
+        if (insertResult.error && insertResult.error.message?.includes('referral_source')) {
+            console.warn('[Appointments API] referral_source column not found, retrying without it');
+            const { referral_source, ...recordWithoutReferral } = appointmentRecord;
+            insertResult = await supabaseAdmin
+                .from('appointments')
+                .insert([recordWithoutReferral])
+                .select()
+                .single();
+        }
+
+        const { data, error } = insertResult;
 
         if (error) {
             console.error('[Appointments API] Supabase insert error:', error);
