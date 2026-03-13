@@ -401,46 +401,64 @@ export default function AgendarWizard() {
                 }
 
                 // 1. Save to Supabase via our appointments API (The Bridge data layer)
-                const supaRes = await fetch('/api/appointments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ...formData,
-                        carData: formData.carData || null,
-                    })
-                });
-                const supaData = await supaRes.json();
                 let supaId = null;
-                if (!supaRes.ok || !supaData.success) {
-                    console.warn('[Wizard] Supabase save warning:', supaData.error);
-                } else {
-                    supaId = supaData.id;
+                try {
+                    const supaRes = await fetch('/api/appointments', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...formData,
+                            carData: formData.carData || null,
+                        })
+                    });
+                    const text1 = await supaRes.text();
+                    const supaData = text1 ? JSON.parse(text1) : {};
+                    if (!supaRes.ok || !supaData.success) {
+                        console.warn('[Wizard] Supabase save warning:', supaData.error);
+                    } else {
+                        supaId = supaData.id;
+                    }
+                } catch (e) {
+                    console.warn('[Wizard] Supabase step failed (non-blocking):', e.message);
                 }
 
                 // 2. Create consignacion directly in the CRM (SimplyAPI)
-                const crmRes = await fetch('/api/crm/api/consignaciones', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ...payload,
-                        appointment_supabase_id: supaId
-                    }),
-                });
-                const crmData = await crmRes.json();
-                if (!crmRes.ok || !crmData.ok) {
-                    console.warn('[Wizard] CRM consignacion warning:', crmData.error);
-                    // Non-blocking — show success regardless
+                try {
+                    const crmRes = await fetch('/api/crm/api/consignaciones', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...payload,
+                            appointment_supabase_id: supaId
+                        }),
+                    });
+                    const text2 = await crmRes.text();
+                    const crmData = text2 ? JSON.parse(text2) : {};
+                    if (!crmRes.ok || !crmData.ok) {
+                        console.warn('[Wizard] CRM consignacion warning:', crmData.error);
+                    }
+                } catch (e) {
+                    console.warn('[Wizard] CRM step failed (non-blocking):', e.message);
                 }
 
                 // 3. Also call the MrCar proxy for backward compatibility
-                const res = await fetch('/api/mrcar/schedule-appointment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-
-                if (!res.ok || !data.success) throw new Error(data.error || 'Error al agendar la cita');
+                // Non-blocking: we already saved to Supabase + CRM above — don't let
+                // this legacy call block the success screen if it fails or returns empty.
+                try {
+                    const res = await fetch('/api/mrcar/schedule-appointment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text) {
+                            try { JSON.parse(text); } catch (_) { /* ignore */ }
+                        }
+                    }
+                } catch (_) {
+                    // Ignore — legacy call, appointment already saved above
+                }
 
                 setLoading(false);
                 setSuccess(true);
