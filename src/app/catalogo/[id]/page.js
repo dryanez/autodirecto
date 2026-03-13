@@ -99,7 +99,8 @@ export default function VehicleDetailPage({ params }) {
     // Build CSS style from per-photo edits.
     // Zoom/pan use scale+translate on the image (container has overflow:hidden).
     // Colour and perspective corrections are also applied.
-    const getEditStyle = (idx) => {
+    // thumbOnly=true → only colour filters, no zoom/pan (thumbnails have no overflow clip)
+    const getEditStyle = (idx, thumbOnly = false) => {
         const edits = vehicle.image_edits?.[idx];
         if (!edits) return {};
         const zoom = edits.zoom ?? 1;
@@ -116,16 +117,19 @@ export default function VehicleDetailPage({ params }) {
             skewV === 0 && skewH === 0;
         if (isDefault) return {};
 
-        const transforms = [];
-        if (zoom !== 1 || panX !== 0 || panY !== 0) {
-            transforms.push(`scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`);
-        }
-        if (skewV !== 0 || skewH !== 0) {
-            transforms.push(`perspective(800px) rotateX(${skewV}deg) rotateY(${skewH}deg)`);
+        const style = {};
+
+        if (!thumbOnly) {
+            const transforms = [];
+            if (zoom !== 1 || panX !== 0 || panY !== 0) {
+                transforms.push(`scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`);
+            }
+            if (skewV !== 0 || skewH !== 0) {
+                transforms.push(`perspective(800px) rotateX(${skewV}deg) rotateY(${skewH}deg)`);
+            }
+            if (transforms.length) style.transform = transforms.join(' ');
         }
 
-        const style = {};
-        if (transforms.length) style.transform = transforms.join(' ');
         if (brightness !== 100 || contrast !== 100 || saturate !== 100) {
             style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`;
         }
@@ -202,7 +206,7 @@ export default function VehicleDetailPage({ params }) {
                                             alt={`Vista ${i + 1}`}
                                             className={activeImage === i ? 'active' : ''}
                                             onClick={() => setActiveImage(i)}
-                                            style={getEditStyle(i)}
+                                            style={getEditStyle(i, true)}
                                         />
                                     ))}
                                 </div>
