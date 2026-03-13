@@ -1298,6 +1298,11 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   gap: var(--space-2xl);
 }
 
+.detail-grid > div:first-child {
+  min-width: 0;          /* prevent grid blowout from large images */
+  overflow: hidden;
+}
+
 .detail-gallery { border-radius: var(--radius-xl); overflow: hidden; }
 
 .detail-gallery > img {
