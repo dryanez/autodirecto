@@ -96,26 +96,28 @@ export default function VehicleDetailPage({ params }) {
         `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} publicado en Auto Directo. ¿Podrían darme más información?`
     );
 
-    // Build CSS style from per-photo edits (zoom, pan, brightness, contrast, saturate, skewV, skewH)
+    // Build CSS style from per-photo edits.
+    // Only colour/perspective corrections are applied on the public site.
+    // Zoom & pan are editor-only framing tools that conflict with object-fit:cover.
     const getEditStyle = (idx) => {
         const edits = vehicle.image_edits?.[idx];
         if (!edits) return {};
-        const zoom = edits.zoom ?? 1;
-        const panX = edits.panX ?? 0;
-        const panY = edits.panY ?? 0;
         const brightness = edits.brightness ?? 100;
         const contrast = edits.contrast ?? 100;
         const saturate = edits.saturate ?? 100;
         const skewV = edits.skewV ?? 0;
         const skewH = edits.skewH ?? 0;
-        const isDefault = zoom === 1 && panX === 0 && panY === 0 &&
-            brightness === 100 && contrast === 100 && saturate === 100 &&
-            skewV === 0 && skewH === 0;
-        if (isDefault) return {};
-        return {
-            transform: `perspective(800px) scale(${zoom}) translate(${panX}px, ${panY}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`,
-            filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
-        };
+        const hasTransform = skewV !== 0 || skewH !== 0;
+        const hasFilter = brightness !== 100 || contrast !== 100 || saturate !== 100;
+        if (!hasTransform && !hasFilter) return {};
+        const style = {};
+        if (hasTransform) {
+            style.transform = `perspective(800px) rotateX(${skewV}deg) rotateY(${skewH}deg)`;
+        }
+        if (hasFilter) {
+            style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`;
+        }
+        return style;
     };
 
     // JSON-LD for vehicle
