@@ -122,7 +122,7 @@ export default function VehicleDetailPage({ params }) {
         if (!thumbOnly) {
             const transforms = [];
             if (zoom !== 1 || panX !== 0 || panY !== 0) {
-                transforms.push(`scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`);
+                transforms.push(`scale(${zoom}) translate(${panX / zoom}%, ${panY / zoom}%)`);
             }
             if (skewV !== 0 || skewH !== 0) {
                 transforms.push(`perspective(800px) rotateX(${skewV}deg) rotateY(${skewH}deg)`);
