@@ -1321,6 +1321,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   border: 2px solid transparent;
   cursor: pointer;
   transition: border-color var(--transition-fast);
+  overflow: hidden;
 }
 
 .detail-gallery-thumbs img:hover,

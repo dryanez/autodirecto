@@ -90,6 +90,28 @@ export default function VehicleDetailPage({ params }) {
         `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} publicado en Auto Directo. ¿Podrían darme más información?`
     );
 
+    // Build CSS style from per-photo edits (zoom, pan, brightness, contrast, saturate, skewV, skewH)
+    const getEditStyle = (idx) => {
+        const edits = vehicle.image_edits?.[idx];
+        if (!edits) return {};
+        const zoom = edits.zoom ?? 1;
+        const panX = edits.panX ?? 0;
+        const panY = edits.panY ?? 0;
+        const brightness = edits.brightness ?? 100;
+        const contrast = edits.contrast ?? 100;
+        const saturate = edits.saturate ?? 100;
+        const skewV = edits.skewV ?? 0;
+        const skewH = edits.skewH ?? 0;
+        const isDefault = zoom === 1 && panX === 0 && panY === 0 &&
+            brightness === 100 && contrast === 100 && saturate === 100 &&
+            skewV === 0 && skewH === 0;
+        if (isDefault) return {};
+        return {
+            transform: `perspective(800px) scale(${zoom}) translate(${panX}px, ${panY}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`,
+            filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
+        };
+    };
+
     // JSON-LD for vehicle
     const vehicleJsonLd = {
         '@context': 'https://schema.org',
@@ -144,6 +166,7 @@ export default function VehicleDetailPage({ params }) {
                             <img
                                 src={vehicle.image_urls[activeImage]}
                                 alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
+                                style={getEditStyle(activeImage)}
                             />
                             <div className="detail-gallery-thumbs">
                                 {vehicle.image_urls.map((url, i) => (
@@ -153,6 +176,7 @@ export default function VehicleDetailPage({ params }) {
                                         alt={`Vista ${i + 1}`}
                                         className={activeImage === i ? 'active' : ''}
                                         onClick={() => setActiveImage(i)}
+                                        style={getEditStyle(i)}
                                     />
                                 ))}
                             </div>
@@ -332,7 +356,19 @@ export default function VehicleDetailPage({ params }) {
                             <div key={v.id}>
                                 <Link href={`/catalogo/${v.id}`} className="vehicle-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                                     <div className="vehicle-card-image">
-                                        <img src={v.image_urls[0]} alt={`${v.brand} ${v.model}`} loading="lazy" />
+                                        <img src={v.image_urls[0]} alt={`${v.brand} ${v.model}`} loading="lazy"
+                                            style={(() => {
+                                                const edits = v.image_edits?.[0];
+                                                if (!edits) return {};
+                                                const z = edits.zoom ?? 1, px = edits.panX ?? 0, py = edits.panY ?? 0;
+                                                const b = edits.brightness ?? 100, c = edits.contrast ?? 100, s = edits.saturate ?? 100;
+                                                const sv = edits.skewV ?? 0, sh = edits.skewH ?? 0;
+                                                if (z===1&&px===0&&py===0&&b===100&&c===100&&s===100&&sv===0&&sh===0) return {};
+                                                return {
+                                                    transform: `perspective(800px) scale(${z}) translate(${px}px, ${py}px) rotateX(${sv}deg) rotateY(${sh}deg)`,
+                                                    filter: `brightness(${b}%) contrast(${c}%) saturate(${s}%)`,
+                                                };
+                                            })()} />
                                     </div>
                                     <div className="vehicle-card-body">
                                         <h3 className="vehicle-card-title">{v.brand} {v.model}</h3>

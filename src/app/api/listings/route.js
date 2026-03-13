@@ -103,5 +103,6 @@ function normalizeRow(row) {
         // extra for detail page
         consignacion_id: row.consignacion_id,
         appraisal_id:    row.appraisal_id,
+        image_edits:     Array.isArray(row.image_edits) ? row.image_edits : [],
     };
 }

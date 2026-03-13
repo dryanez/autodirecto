@@ -12,6 +12,7 @@ export default function VehicleCard({ vehicle }) {
     transmission,
     color,
     image_urls,
+    image_edits,
     featured,
   } = vehicle;
 
@@ -21,6 +22,28 @@ export default function VehicleCard({ vehicle }) {
   const formatKm = (km) =>
     km >= 1000 ? (km / 1000).toFixed(0) + 'k km' : km + ' km';
 
+  // Build CSS style from cover photo edits
+  const coverEditStyle = (() => {
+    const edits = image_edits?.[0];
+    if (!edits) return {};
+    const zoom = edits.zoom ?? 1;
+    const panX = edits.panX ?? 0;
+    const panY = edits.panY ?? 0;
+    const brightness = edits.brightness ?? 100;
+    const contrast = edits.contrast ?? 100;
+    const saturate = edits.saturate ?? 100;
+    const skewV = edits.skewV ?? 0;
+    const skewH = edits.skewH ?? 0;
+    const isDefault = zoom === 1 && panX === 0 && panY === 0 &&
+        brightness === 100 && contrast === 100 && saturate === 100 &&
+        skewV === 0 && skewH === 0;
+    if (isDefault) return {};
+    return {
+      transform: `perspective(800px) scale(${zoom}) translate(${panX}px, ${panY}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`,
+      filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
+    };
+  })();
+
   return (
     <Link href={`/catalogo/${id}`} className="vehicle-card">
       {/* Image */}
@@ -29,6 +52,7 @@ export default function VehicleCard({ vehicle }) {
           src={image_urls?.[0] || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=70'}
           alt={`${brand} ${model} ${year}`}
           loading="lazy"
+          style={coverEditStyle}
         />
         {featured && (
           <div className="vehicle-card-badge">
