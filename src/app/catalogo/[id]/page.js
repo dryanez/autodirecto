@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 
@@ -10,6 +10,12 @@ export default function VehicleDetailPage({ params }) {
     const [related, setRelated] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
+    const thumbsRef = useRef(null);
+
+    const scrollThumbs = (dir) => {
+        if (!thumbsRef.current) return;
+        thumbsRef.current.scrollBy({ left: dir * 240, behavior: 'smooth' });
+    };
 
     // Credit simulator state
     const [creditOpen, setCreditOpen] = useState(false);
@@ -168,17 +174,25 @@ export default function VehicleDetailPage({ params }) {
                                 alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
                                 style={getEditStyle(activeImage)}
                             />
-                            <div className="detail-gallery-thumbs">
-                                {vehicle.image_urls.map((url, i) => (
-                                    <img
-                                        key={i}
-                                        src={url}
-                                        alt={`Vista ${i + 1}`}
-                                        className={activeImage === i ? 'active' : ''}
-                                        onClick={() => setActiveImage(i)}
-                                        style={getEditStyle(i)}
-                                    />
-                                ))}
+                            <div className="detail-gallery-thumbs-wrapper">
+                                {vehicle.image_urls.length > 6 && (
+                                    <button className="thumb-arrow left" onClick={() => scrollThumbs(-1)} aria-label="Anterior">‹</button>
+                                )}
+                                <div className="detail-gallery-thumbs" ref={thumbsRef}>
+                                    {vehicle.image_urls.map((url, i) => (
+                                        <img
+                                            key={i}
+                                            src={url}
+                                            alt={`Vista ${i + 1}`}
+                                            className={activeImage === i ? 'active' : ''}
+                                            onClick={() => setActiveImage(i)}
+                                            style={getEditStyle(i)}
+                                        />
+                                    ))}
+                                </div>
+                                {vehicle.image_urls.length > 6 && (
+                                    <button className="thumb-arrow right" onClick={() => scrollThumbs(1)} aria-label="Siguiente">›</button>
+                                )}
                             </div>
                         </div>
 
