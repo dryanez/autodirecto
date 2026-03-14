@@ -1368,7 +1368,8 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   width: 100%;
   height: 450px;
   object-fit: cover;
-  border-radius: var(--radius-xl);
+  /* No border-radius here — the container already has overflow:hidden + radius.
+     Applying it to the img itself caused a circular dark-overlay / lens effect. */
   transform-origin: center center;
   display: block;
 }
