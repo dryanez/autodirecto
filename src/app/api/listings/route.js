@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { vehicles as mockVehicles } from '@/lib/mockData';
 
 export const revalidate = 60; // revalidate every 60s
 
@@ -19,16 +18,13 @@ export async function GET(request) {
                 .single();
 
             if (error || !data) {
-                // Fall back to mock data
-                const mock = mockVehicles.find(v => v.id === parseInt(id));
-                if (mock) return NextResponse.json(mock);
                 return NextResponse.json({ error: 'Not found' }, { status: 404 });
             }
 
             return NextResponse.json(normalizeRow(data));
         }
 
-        // All active listings
+        // All active listings — real data only, no mock fallback
         const { data, error } = await supabaseAdmin
             .from('listings')
             .select('*')
@@ -37,17 +33,14 @@ export async function GET(request) {
 
         if (error) {
             console.error('[listings API] Supabase error:', error.message);
-            // Fall back to mock data
-            return NextResponse.json(mockVehicles);
+            return NextResponse.json([], { status: 200 });
         }
 
-        // Merge: real listings first, then fill with mock if none exist yet
-        const rows = (data && data.length > 0) ? data.map(normalizeRow) : mockVehicles;
-        return NextResponse.json(rows);
+        return NextResponse.json((data || []).map(normalizeRow));
 
     } catch (err) {
         console.error('[listings API] Unexpected error:', err);
-        return NextResponse.json(mockVehicles);
+        return NextResponse.json([], { status: 200 });
     }
 }
 

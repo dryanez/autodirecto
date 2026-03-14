@@ -1,45 +1,61 @@
 import Link from 'next/link';
 import VehicleCard from './components/VehicleCard';
-import { vehicles, testimonials, brands } from '@/lib/mockData';
+import { testimonials, brands } from '@/lib/mockData';
+import { supabaseAdmin } from '@/lib/supabase';
 
-// JSON-LD for "How it works" process
-const howToJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'HowTo',
-  name: 'Cómo comprar o vender tu auto en Auto Directo',
-  description: 'Comprar o vender tu auto nunca fue tan fácil. 3 pasos simples para completar tu transacción 100% online.',
-  step: [
-    {
-      '@type': 'HowToStep',
-      position: 1,
-      name: 'Publica o Busca',
-      text: 'Sube tu vehículo o explora nuestro catálogo verificado con inspección certificada.',
-    },
-    {
-      '@type': 'HowToStep',
-      position: 2,
-      name: 'Conectamos',
-      text: 'Gestionamos interesados, negociaciones y toda la documentación legal necesaria.',
-    },
-    {
-      '@type': 'HowToStep',
-      position: 3,
-      name: 'Listo',
-      text: 'Transferencia segura y pago garantizado. Sin sorpresas ni costos ocultos.',
-    },
-  ],
+const FEATURE_MAP = {
+    aireAcondicionado: '❄️ Aire acondicionado', bluetooth: '🎵 Bluetooth',
+    carplayAndroid: '📱 CarPlay / Android Auto', conexionUsb: '🔌 Conexión USB',
+    gps: '📍 GPS / Navegación', isofix: '👶 ISOFIX', smartKey: '🔑 Smart Key',
+    lucesLed: '💡 Luces LED', mandosVolante: '🎛️ Mandos en volante',
+    sensorEstacionamiento: '🅿️ Sensor de estacionamiento', sonidoPremium: '🔊 Sonido premium',
+    techoElectrico: '🪟 Techo eléctrico', ventiladorAsiento: '💨 Ventilador de asiento',
+    calefactorAsiento: '🔥 Calefactor de asiento',
 };
+function featuresToArray(f) {
+    if (Array.isArray(f)) return f;
+    if (!f || typeof f !== 'object') return [];
+    return Object.entries(f).filter(([, v]) => v).map(([k]) => FEATURE_MAP[k] || k);
+}
 
-export default function Home() {
-  const featuredVehicles = vehicles.filter((v) => v.featured).slice(0, 6);
+export const revalidate = 60;
+
+export default async function Home() {
+  // Fetch real featured listings from Supabase
+  let featuredVehicles = [];
+  try {
+      const { data } = await supabaseAdmin
+          .from('listings')
+          .select('*')
+          .eq('status', 'disponible')
+          .order('created_at', { ascending: false })
+          .limit(6);
+      featuredVehicles = (data || []).map(row => ({
+          id: row.id,
+          brand: row.brand || '',
+          model: row.model || '',
+          year: row.year || new Date().getFullYear(),
+          price: row.price || 0,
+          mileage_km: row.mileage_km || 0,
+          fuel_type: row.fuel_type || 'Bencina',
+          transmission: row.transmission || 'Manual',
+          color: row.color || '',
+          description: row.description || '',
+          image_urls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
+          features: featuresToArray(row.features),
+          featured: row.featured || false,
+          status: row.status || 'disponible',
+          created_at: row.created_at,
+          image_edits: Array.isArray(row.image_edits) ? row.image_edits : [],
+      }));
+  } catch (e) {
+      console.error('[home] failed to fetch listings:', e);
+  }
+
   const displayTestimonials = testimonials.slice(0, 3);
 
   return (
     <main>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
-      />
       {/* ═══════════════════ HERO ═══════════════════ */}
       <section className="hero">
         <div className="hero-image-wrap">
