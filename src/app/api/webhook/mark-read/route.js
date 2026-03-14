@@ -1,12 +1,17 @@
+export const runtime = 'nodejs';
+
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+export const runtime = 'nodejs';
 
 export async function POST(request) {
+  // Create client inside handler so env vars are resolved at runtime, not build time
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
   try {
     const { conversationId } = await request.json();
     if (!conversationId) return new Response('Missing conversationId', { status: 400 });

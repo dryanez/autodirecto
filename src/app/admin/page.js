@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { createClient } from '@supabase/supabase-js';
 
 // Lazy-load WhatsApp dashboard so it doesn't affect CRM load time
 const WhatsAppDashboard = dynamic(() => import('./whatsapp/page'), {
@@ -55,16 +56,15 @@ export default function AdminPage() {
     router.replace('/admin/login');
   }
 
-  // Track WhatsApp unread badge (poll every 30s when not on that tab)
+  // Track WhatsApp unread badge (poll every 30s)
   useEffect(() => {
     let interval;
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    );
     const fetchUnread = async () => {
       try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const sb = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-        );
         const { data } = await sb
           .from('wa_conversations')
           .select('unread_count')

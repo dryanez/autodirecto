@@ -1,13 +1,22 @@
+// Force Node.js runtime — needed for 'fs' (readFileSync) and full Node APIs
+export const runtime = 'nodejs';
+
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-// ── Supabase service-role client (bypasses RLS) ───────────────
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+// ── Supabase client — lazy singleton, created at runtime not build time ───────
+let _supabaseAdmin = null;
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+  }
+  return _supabaseAdmin;
+}
 
 // ── Load agent prompt from project root ───────────────────────
 let SYSTEM_PROMPT = '';
@@ -52,7 +61,7 @@ function extractMessage(body) {
 async function upsertConversation(phone) {
   console.log(`[webhook] upsertConversation for ${phone}`);
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('wa_conversations')
     .upsert(
       { phone_number: phone },
@@ -79,7 +88,7 @@ async function saveMessage(conversationId, role, content, waMessageId = null) {
   };
   if (waMessageId) payload.wa_message_id = waMessageId;
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('wa_messages')
     .insert(payload);
 
@@ -89,31 +98,9 @@ async function saveMessage(conversationId, role, content, waMessageId = null) {
   }
 }
 
-/** Update the conversation's last_message and unread_count */
-async function updateConversationMeta(conversationId, lastMessage, isUser) {
-  const { error } = await supabaseAdmin
-    .from('wa_conversations')
-    .update({
-      last_message: lastMessage.slice(0, 120),
-      last_message_at: new Date().toISOString(),
-      unread_count: isUser
-        ? supabaseAdmin.rpc // handled below via raw increment
-        : undefined,
-    })
-    .eq('id', conversationId);
-
-  if (isUser) {
-    await supabaseAdmin.rpc('wa_increment_unread', { conv_id: conversationId });
-  }
-
-  if (error) {
-    console.error('[webhook] updateConversationMeta error:', JSON.stringify(error));
-  }
-}
-
 /** Fetch last N messages for context */
 async function getRecentMessages(conversationId, limit = 10) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('wa_messages')
     .select('role, content')
     .eq('conversation_id', conversationId)
@@ -253,7 +240,7 @@ export async function POST(request) {
 
       // 3. Update conversation meta (last message, unread)
       try {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('wa_conversations')
           .update({
             last_message: text.slice(0, 120),
@@ -282,7 +269,7 @@ export async function POST(request) {
       await saveMessage(convId, 'assistant', aiReply);
 
       // 8. Update last message to AI reply
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('wa_conversations')
         .update({
           last_message: aiReply.slice(0, 120),
