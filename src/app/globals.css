@@ -1373,15 +1373,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   display: block;
 }
 
-/* next/image renders a span wrapper — make sure it fills the container */
-.detail-gallery-main > span,
-.detail-gallery-main > span > img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-  border-radius: var(--radius-xl);
-  transform-origin: center center;
-}
+/* Remove stale next/image span rule — no longer used */
 
 .detail-gallery-thumbs-wrapper {
   position: relative;
@@ -1435,7 +1427,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
 }
 
 .detail-gallery-thumbs img,
-.detail-gallery-thumb-item {
+.detail-gallery-thumb-img {
   width: 80px;
   height: 56px;
   flex-shrink: 0;
@@ -1451,7 +1443,9 @@ textarea.input-field { resize: vertical; min-height: 120px; }
 .detail-gallery-thumbs img:hover,
 .detail-gallery-thumbs img.active,
 .detail-gallery-thumb-item:hover,
-.detail-gallery-thumb-item.active {
+.detail-gallery-thumb-item.active,
+.detail-gallery-thumb-img:hover,
+.detail-gallery-thumb-img.active {
   border-color: var(--color-accent);
 }
 
@@ -1911,7 +1905,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   .detail-gallery > img,
   .detail-gallery-main > img { height: 260px; }
   .detail-gallery-thumbs img,
-  .detail-gallery-thumb-item { width: 60px; height: 45px; }
+  .detail-gallery-thumb-img { width: 60px; height: 45px; }
 
   /* --- Card (wizard etc) --- */
   .card { border-radius: var(--radius-lg); }

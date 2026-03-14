@@ -183,13 +183,13 @@ export default function VehicleDetailPage({ params }) {
                     <div>
                         <div className="detail-gallery">
                             <div className="detail-gallery-main">
-                                <Image
+                                {/* Plain <img> — avoids next/image fill stale-image flash and overlay issues.
+                                    The edit transform is applied directly; no intermediate loading state. */}
+                                <img
+                                    key={activeImage}
                                     src={vehicle.image_urls[activeImage]}
                                     alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
-                                    fill
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 800px"
-                                    priority={activeImage === 0}
-                                    style={{ objectFit: 'cover', ...getEditStyle(activeImage) }}
+                                    style={getEditStyle(activeImage)}
                                 />
                                 {vehicle.image_urls.length > 1 && (
                                     <>
@@ -215,19 +215,14 @@ export default function VehicleDetailPage({ params }) {
                                 )}
                                 <div className="detail-gallery-thumbs" ref={thumbsRef}>
                                     {vehicle.image_urls.map((url, i) => (
-                                        <div
+                                        <img
                                             key={i}
-                                            className={`detail-gallery-thumb-item${activeImage === i ? ' active' : ''}`}
+                                            src={url}
+                                            alt={`Vista ${i + 1}`}
+                                            className={`detail-gallery-thumb-img${activeImage === i ? ' active' : ''}`}
                                             onClick={() => setActiveImage(i)}
-                                        >
-                                            <Image
-                                                src={url}
-                                                alt={`Vista ${i + 1}`}
-                                                fill
-                                                sizes="120px"
-                                                style={{ objectFit: 'cover', ...getEditStyle(i, true) }}
-                                            />
-                                        </div>
+                                            style={getEditStyle(i, true)}
+                                        />
                                     ))}
                                 </div>
                                 {vehicle.image_urls.length > 6 && (
