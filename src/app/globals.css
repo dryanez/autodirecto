@@ -653,15 +653,15 @@ input, textarea, select {
 .vehicle-card-image {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 240px;
   overflow: hidden;
-  background: var(--color-bg-secondary);
+  background: #0a0f1a; /* dark fill for contain letterbox */
 }
 
 .vehicle-card-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;        /* show the whole car — no cropping */
   transition: transform var(--transition-slow);
 }
 
@@ -1429,16 +1429,16 @@ textarea.input-field { resize: vertical; min-height: 120px; }
 
 .detail-gallery-thumbs img,
 .detail-gallery-thumb-img {
-  width: 80px;
-  height: 56px;
+  width: 100px;
+  height: 68px;
   flex-shrink: 0;
-  object-fit: cover;
+  object-fit: contain;        /* show the whole car — no cropping */
+  background: #0a0f1a;        /* dark fill for letterbox areas */
   border-radius: var(--radius-sm);
   border: 2px solid transparent;
   cursor: pointer;
   transition: border-color var(--transition-fast);
   overflow: hidden;
-  position: relative; /* needed for next/image fill */
 }
 
 .detail-gallery-thumbs img:hover,
@@ -1906,7 +1906,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   .detail-gallery > img,
   .detail-gallery-main > img { height: 260px; }
   .detail-gallery-thumbs img,
-  .detail-gallery-thumb-img { width: 60px; height: 45px; }
+  .detail-gallery-thumb-img { width: 72px; height: 50px; }
 
   /* --- Card (wizard etc) --- */
   .card { border-radius: var(--radius-lg); }

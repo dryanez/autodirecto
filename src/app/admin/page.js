@@ -2,10 +2,26 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Lazy-load WhatsApp dashboard so it doesn't affect CRM load time
+const WhatsAppDashboard = dynamic(() => import('./whatsapp/page'), {
+  loading: () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', color: '#6b7280', fontSize: '0.85rem',
+      fontFamily: "'Outfit', sans-serif",
+    }}>
+      Cargando WhatsApp…
+    </div>
+  ),
+  ssr: false,
+});
 
 const TABS = [
-  { id: 'crm',     label: '🏁 Pipeline', path: '' },
-  { id: 'funnels', label: '🚗 Funnels',  path: '/funnels' },
+  { id: 'crm',       label: '🏁 Pipeline',  path: '',          iframe: true  },
+  { id: 'funnels',   label: '🚗 Funnels',   path: '/funnels',  iframe: true  },
+  { id: 'whatsapp',  label: '💬 WhatsApp',  path: null,        iframe: false },
 ];
 
 export default function AdminPage() {
@@ -13,6 +29,7 @@ export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('crm');
+  const [whatsappUnread, setWhatsappUnread] = useState(0);
 
   useEffect(() => {
     try {
@@ -37,6 +54,29 @@ export default function AdminPage() {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.replace('/admin/login');
   }
+
+  // Track WhatsApp unread badge (poll every 30s when not on that tab)
+  useEffect(() => {
+    let interval;
+    const fetchUnread = async () => {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const sb = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+        );
+        const { data } = await sb
+          .from('wa_conversations')
+          .select('unread_count')
+          .gt('unread_count', 0);
+        const total = (data || []).reduce((sum, c) => sum + (c.unread_count || 0), 0);
+        setWhatsappUnread(total);
+      } catch {}
+    };
+    fetchUnread();
+    interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -93,11 +133,26 @@ export default function AdminPage() {
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s',
-                  background: activeTab === tab.id ? '#3b82f6' : 'transparent',
+                  background: activeTab === tab.id
+                    ? tab.id === 'whatsapp' ? '#25D366' : '#3b82f6'
+                    : 'transparent',
                   color: activeTab === tab.id ? '#fff' : '#9ca3af',
+                  position: 'relative',
+                  display: 'flex', alignItems: 'center', gap: '0.3rem',
                 }}
               >
                 {tab.label}
+                {tab.id === 'whatsapp' && whatsappUnread > 0 && activeTab !== 'whatsapp' && (
+                  <span style={{
+                    background: '#ef4444', color: '#fff',
+                    borderRadius: '99px', fontSize: '0.6rem', fontWeight: 800,
+                    padding: '0 0.3rem', minWidth: '14px', height: '14px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1,
+                  }}>
+                    {whatsappUnread > 99 ? '99+' : whatsappUnread}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -140,7 +195,7 @@ export default function AdminPage() {
       </div>
 
       {/* ── Iframes — both rendered, only active one visible ──────── */}
-      {TABS.map(tab => (
+      {TABS.filter(t => t.iframe).map(tab => (
         <iframe
           key={tab.id}
           src={`${CRM_URL}${tab.path}`}
@@ -152,6 +207,14 @@ export default function AdminPage() {
           allow="camera; microphone; clipboard-write"
         />
       ))}
+
+      {/* ── WhatsApp native dashboard ──────────────────────────── */}
+      <div style={{
+        flex: 1, display: activeTab === 'whatsapp' ? 'flex' : 'none',
+        flexDirection: 'column', overflow: 'hidden',
+      }}>
+        {activeTab === 'whatsapp' && <WhatsAppDashboard />}
+      </div>
     </div>
   );
 }

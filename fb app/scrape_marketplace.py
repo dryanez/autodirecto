@@ -1,16 +1,11 @@
 """
-Facebook Marketplace - GraphQL Scraper (structure confirmed)
+Facebook Marketplace - GraphQL Scraper (smart V-Region filtering)
 Uses Playwright to intercept /api/graphql/ responses from FB Marketplace
 and parse the confirmed structure:
   data.marketplace_search.feed_units.edges[].node.listing
 
-Fields:
-  - marketplace_listing_title
-  - listing_price.formatted_amount / .amount
-  - location.reverse_geocode.city
-  - custom_sub_titles_with_rendering_flags[0].subtitle  (km)
-  - id (listing ID)
-  - marketplace_listing_seller.name
+SMART STOP: Stops when 500 qualifying V-Region leads (≥4M CLP) are found,
+            or after 2000 scrolls (safety limit).
 
 REQUIREMENT: Close Google Chrome before running (profile must not be locked).
 """
@@ -26,20 +21,51 @@ from playwright.async_api import async_playwright
 # ─── Config ─────────────────────────────────────────────────────────────────────
 TARGET_URL = (
     "https://www.facebook.com/marketplace/106647439372422/search/"
-    "?minPrice=8000000&query=Vehicles&exact=false&radius=20"
+    "?minPrice=4000000&query=Vehicles&exact=false&radius=20"
 )
 OUTPUT_FILE  = Path(__file__).parent / "facebook_graphql_vehicles.csv"
-SCROLL_STEPS = 40
+MAX_SCROLLS  = 2000          # safety cap — never scroll more than this
+TARGET_LEADS = 500           # stop early when we reach this many qualifying leads
+MIN_PRICE    = 4_000_000     # 4 million CLP minimum
 SCROLL_PX    = 1200
 SCROLL_DELAY = 2.5
 CHROME_USER_DATA = Path.home() / "Library/Application Support/Google/Chrome"
 
+# ─── V Region communes (lowercase) ─────────────────────────────────────────────
+V_REGION_COMMUNES = {
+    "viña del mar", "vina del mar", "concón", "concon",
+    "valparaíso", "valparaiso", "quilpué", "quilpue",
+    "villa alemana", "quintero", "limache", "olmué", "olmue",
+    "casablanca", "quillota", "la cruz", "puchuncaví", "puchuncavi",
+    "calera", "nogales", "hijuelas", "algarrobo",
+    "el quisco", "el tabo", "san antonio", "cartagena", "santo domingo",
+}
+
 # ─── Global store ───────────────────────────────────────────────────────────────
 vehicles: dict[str, dict] = {}
+qualifying_count = 0          # V-Region + ≥4M CLP
 graphql_count = 0
+
+# ─── Helpers ────────────────────────────────────────────────────────────────────
+def _is_v_region(city: str) -> bool:
+    """Check if the city belongs to V Region."""
+    if not city:
+        return False
+    loc = city.lower().strip()
+    return any(commune in loc for commune in V_REGION_COMMUNES)
+
+
+def _parse_price_clp(formatted: str) -> int:
+    """Extract numeric CLP value from strings like 'CLP 5.500.000' or '$5.500.000'."""
+    if not formatted:
+        return 0
+    digits = "".join(ch for ch in formatted if ch.isdigit())
+    return int(digits) if digits else 0
+
 
 # ─── Parser — confirmed structure ───────────────────────────────────────────────
 def parse_feed_units(data: dict):
+    global qualifying_count
     try:
         edges = data["data"]["marketplace_search"]["feed_units"]["edges"]
     except (KeyError, TypeError):
@@ -50,7 +76,8 @@ def parse_feed_units(data: dict):
             listing = edge["node"]["listing"]
             lid = str(listing.get("id", ""))
             title = listing.get("marketplace_listing_title") or listing.get("custom_title", "")
-            price = (listing.get("listing_price") or {}).get("formatted_amount", "")
+            price_fmt = (listing.get("listing_price") or {}).get("formatted_amount", "")
+            price_raw = int((listing.get("listing_price") or {}).get("amount", "0") or "0")
             city = (
                 (listing.get("location") or {})
                 .get("reverse_geocode", {})
@@ -62,16 +89,31 @@ def parse_feed_units(data: dict):
             listing_url = f"https://www.facebook.com/marketplace/item/{lid}/"
 
             if lid and title and lid not in vehicles:
+                # Determine price (prefer raw amount, fallback to parsing formatted)
+                price_num = price_raw if price_raw > 0 else _parse_price_clp(price_fmt)
+                is_v = _is_v_region(city)
+                qualifies = is_v and price_num >= MIN_PRICE
+
                 vehicles[lid] = {
                     "id": lid,
                     "title": title,
-                    "price": price,
+                    "price": price_fmt,
+                    "price_clp": price_num,
                     "city": city,
                     "km": km,
                     "seller": seller,
                     "url": listing_url,
+                    "v_region": is_v,
+                    "qualifies": qualifies,
                 }
-                print(f"  ✅ [{len(vehicles):>3}] {title[:50]:<50} | {price:<18} | {city} | {km}")
+
+                if qualifies:
+                    qualifying_count += 1
+                    tag = f"🟢 Q{qualifying_count:>3}/{TARGET_LEADS}"
+                else:
+                    tag = "⚪ skip"
+
+                print(f"  {tag} [{len(vehicles):>4}] {title[:45]:<45} | {price_fmt:<18} | {city:<20} | {km}")
         except Exception:
             continue
 
@@ -141,22 +183,41 @@ async def main():
         await page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=60_000)
         await asyncio.sleep(5)
 
-        print(f"\n🔄 Scrolling {SCROLL_STEPS} times…\n")
-        for i in range(1, SCROLL_STEPS + 1):
+        print(f"\n🔄 Smart scraping: target {TARGET_LEADS} qualifying V-Region leads (max {MAX_SCROLLS} scrolls)…\n")
+        for i in range(1, MAX_SCROLLS + 1):
             await page.evaluate(f"window.scrollBy(0, {SCROLL_PX})")
-            print(f"  Scroll {i:>2}/{SCROLL_STEPS} — {len(vehicles)} vehicles | {graphql_count} GraphQL hits")
+            print(f"  Scroll {i:>4}/{MAX_SCROLLS} — {qualifying_count}/{TARGET_LEADS} qualifying | {len(vehicles)} total | {graphql_count} GraphQL")
             await asyncio.sleep(SCROLL_DELAY)
+
+            # ── Smart stop: we have enough qualifying leads ──
+            if qualifying_count >= TARGET_LEADS:
+                print(f"\n🎯 Reached {qualifying_count} qualifying V-Region leads! Stopping early.")
+                break
 
         await asyncio.sleep(3)
 
-        print(f"\n💾 Saving {len(vehicles)} vehicles → {OUTPUT_FILE}")
+        # ── Save ALL vehicles (full CSV) ──
+        print(f"\n💾 Saving {len(vehicles)} total vehicles → {OUTPUT_FILE}")
+        fieldnames = ["id", "title", "price", "price_clp", "city", "km", "seller", "url", "v_region", "qualifies"]
         with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["id", "title", "price", "city", "km", "seller", "url"])
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(vehicles.values())
 
-        print(f"\n✅ Done! {len(vehicles)} vehicles → {OUTPUT_FILE}")
-        print(f"   GraphQL responses intercepted: {graphql_count}")
+        # ── Also save QUALIFYING only ──
+        qualified_file = OUTPUT_FILE.with_name("facebook_qualified_v_region.csv")
+        qualified = [v for v in vehicles.values() if v["qualifies"]]
+        with open(qualified_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(qualified)
+
+        print(f"\n✅ Done!")
+        print(f"   Total vehicles scraped:    {len(vehicles)}")
+        print(f"   Qualifying V-Region leads: {qualifying_count}")
+        print(f"   All vehicles →             {OUTPUT_FILE}")
+        print(f"   Qualified only →           {qualified_file}")
+        print(f"   GraphQL responses:         {graphql_count}")
         await context.close()
 
     shutil.rmtree(tmp_dir, ignore_errors=True)

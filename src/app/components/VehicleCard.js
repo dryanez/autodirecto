@@ -54,7 +54,7 @@ export default function VehicleCard({ vehicle }) {
           alt={`${brand} ${model} ${year}`}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
-          style={{ objectFit: 'cover', ...coverEditStyle }}
+          style={{ objectFit: 'contain', ...coverEditStyle }}
         />
         {featured && (
           <div className="vehicle-card-badge">

@@ -423,7 +423,7 @@ export default function VehicleDetailPage({ params }) {
                                                     alt={`${v.brand} ${v.model}`}
                                                     fill
                                                     sizes="(max-width: 768px) 100vw, 400px"
-                                                    style={imgStyle}
+                                                    style={{ objectFit: 'contain', ...imgStyle }}
                                                 />
                                             );
                                         })()}
