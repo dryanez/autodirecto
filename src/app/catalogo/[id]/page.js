@@ -97,8 +97,9 @@ export default function VehicleDetailPage({ params }) {
     );
 
     // Build CSS style from per-photo edits.
-    // Zoom/pan use scale+translate on the image (container has overflow:hidden).
-    // Colour and perspective corrections are also applied.
+    // Must match EXACTLY the transform formula used in the CRM editor (index.html):
+    //   perspective(800px) scale(zoom) translate(panX/zoom px, panY/zoom px) rotateX(skewV) rotateY(skewH)
+    // panX/panY are stored in px (mouse drag pixels), NOT percentages.
     // thumbOnly=true → only colour filters, no zoom/pan (thumbnails have no overflow clip)
     const getEditStyle = (idx, thumbOnly = false) => {
         const edits = vehicle.image_edits?.[idx];
@@ -120,14 +121,7 @@ export default function VehicleDetailPage({ params }) {
         const style = {};
 
         if (!thumbOnly) {
-            const transforms = [];
-            if (zoom !== 1 || panX !== 0 || panY !== 0) {
-                transforms.push(`scale(${zoom}) translate(${panX / zoom}%, ${panY / zoom}%)`);
-            }
-            if (skewV !== 0 || skewH !== 0) {
-                transforms.push(`perspective(800px) rotateX(${skewV}deg) rotateY(${skewH}deg)`);
-            }
-            if (transforms.length) style.transform = transforms.join(' ');
+            style.transform = `perspective(800px) scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`;
         }
 
         if (brightness !== 100 || contrast !== 100 || saturate !== 100) {
