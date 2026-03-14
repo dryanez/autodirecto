@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const TABS = [
-  { id: 'crm',     label: '🗂 CRM',     path: '' },
-  { id: 'funnels', label: '🚗 Funnels', path: '/funnels' },
+  { id: 'crm',     label: '🏁 Pipeline', path: '' },
+  { id: 'funnels', label: '🚗 Funnels',  path: '/funnels' },
 ];
 
 export default function AdminPage() {
