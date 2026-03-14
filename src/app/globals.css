@@ -1314,6 +1314,55 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   position: relative;
 }
 
+/* Prev/Next arrows overlaid on the main image */
+.detail-gallery-main .main-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.15s;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.detail-gallery-main .main-arrow:hover {
+  background: rgba(0, 0, 0, 0.85);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.detail-gallery-main .main-arrow.left  { left: 14px; }
+.detail-gallery-main .main-arrow.right { right: 14px; }
+
+/* Photo counter pill — bottom-right of main image */
+.detail-gallery-main .main-image-counter {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+  letter-spacing: 0.03em;
+}
+
 .detail-gallery > img,
 .detail-gallery-main > img {
   width: 100%;

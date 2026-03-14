@@ -187,6 +187,23 @@ export default function VehicleDetailPage({ params }) {
                                     alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
                                     style={getEditStyle(activeImage)}
                                 />
+                                {vehicle.image_urls.length > 1 && (
+                                    <>
+                                        <button
+                                            className="main-arrow left"
+                                            onClick={() => setActiveImage(i => (i - 1 + vehicle.image_urls.length) % vehicle.image_urls.length)}
+                                            aria-label="Imagen anterior"
+                                        >‹</button>
+                                        <button
+                                            className="main-arrow right"
+                                            onClick={() => setActiveImage(i => (i + 1) % vehicle.image_urls.length)}
+                                            aria-label="Imagen siguiente"
+                                        >›</button>
+                                        <span className="main-image-counter">
+                                            {activeImage + 1} / {vehicle.image_urls.length}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                             <div className="detail-gallery-thumbs-wrapper">
                                 {vehicle.image_urls.length > 6 && (
