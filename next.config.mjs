@@ -1,5 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ── Next.js Image Optimisation ──
+  // Allows next/image to serve Supabase Storage images as WebP at the correct
+  // display size — dramatically improves quality/load speed vs raw <img>.
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'kqympdxeszdyppbhtzbm.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        // Unsplash placeholder images used in hero / fallback
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+    // Serve WebP (smaller, same quality) and AVIF when browsers support it
+    formats: ['image/avif', 'image/webp'],
+    // Keep full resolution — no artificial width cap
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+
   // ── Security & SEO Headers ──
   async headers() {
     return [

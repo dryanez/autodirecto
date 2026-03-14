@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { use } from 'react';
 
 export default function VehicleDetailPage({ params }) {
@@ -182,10 +183,13 @@ export default function VehicleDetailPage({ params }) {
                     <div>
                         <div className="detail-gallery">
                             <div className="detail-gallery-main">
-                                <img
+                                <Image
                                     src={vehicle.image_urls[activeImage]}
                                     alt={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
-                                    style={getEditStyle(activeImage)}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 800px"
+                                    priority={activeImage === 0}
+                                    style={{ objectFit: 'cover', ...getEditStyle(activeImage) }}
                                 />
                                 {vehicle.image_urls.length > 1 && (
                                     <>
@@ -211,14 +215,19 @@ export default function VehicleDetailPage({ params }) {
                                 )}
                                 <div className="detail-gallery-thumbs" ref={thumbsRef}>
                                     {vehicle.image_urls.map((url, i) => (
-                                        <img
+                                        <div
                                             key={i}
-                                            src={url}
-                                            alt={`Vista ${i + 1}`}
-                                            className={activeImage === i ? 'active' : ''}
+                                            className={`detail-gallery-thumb-item${activeImage === i ? ' active' : ''}`}
                                             onClick={() => setActiveImage(i)}
-                                            style={getEditStyle(i, true)}
-                                        />
+                                        >
+                                            <Image
+                                                src={url}
+                                                alt={`Vista ${i + 1}`}
+                                                fill
+                                                sizes="120px"
+                                                style={{ objectFit: 'cover', ...getEditStyle(i, true) }}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                                 {vehicle.image_urls.length > 6 && (
@@ -401,19 +410,28 @@ export default function VehicleDetailPage({ params }) {
                             <div key={v.id}>
                                 <Link href={`/catalogo/${v.id}`} className="vehicle-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                                     <div className="vehicle-card-image">
-                                        <img src={v.image_urls[0]} alt={`${v.brand} ${v.model}`} loading="lazy"
-                                            style={(() => {
-                                                const edits = v.image_edits?.[0];
-                                                if (!edits) return {};
+                                        {(() => {
+                                            const edits = v.image_edits?.[0];
+                                            const imgStyle = { objectFit: 'cover' };
+                                            if (edits) {
                                                 const z = edits.zoom ?? 1, px = edits.panX ?? 0, py = edits.panY ?? 0;
                                                 const b = edits.brightness ?? 100, c = edits.contrast ?? 100, s = edits.saturate ?? 100;
                                                 const sv = edits.skewV ?? 0, sh = edits.skewH ?? 0;
-                                                if (z===1&&px===0&&py===0&&b===100&&c===100&&s===100&&sv===0&&sh===0) return {};
-                                                return {
-                                                    transform: `perspective(800px) scale(${z}) translate(${px}px, ${py}px) rotateX(${sv}deg) rotateY(${sh}deg)`,
-                                                    filter: `brightness(${b}%) contrast(${c}%) saturate(${s}%)`,
-                                                };
-                                            })()} />
+                                                if (!(z===1&&px===0&&py===0&&b===100&&c===100&&s===100&&sv===0&&sh===0)) {
+                                                    imgStyle.transform = `perspective(800px) scale(${z}) translate(${px / z}px, ${py / z}px) rotateX(${sv}deg) rotateY(${sh}deg)`;
+                                                    imgStyle.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+                                                }
+                                            }
+                                            return (
+                                                <Image
+                                                    src={v.image_urls[0]}
+                                                    alt={`${v.brand} ${v.model}`}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 400px"
+                                                    style={imgStyle}
+                                                />
+                                            );
+                                        })()}
                                     </div>
                                     <div className="vehicle-card-body">
                                         <h3 className="vehicle-card-title">{v.brand} {v.model}</h3>

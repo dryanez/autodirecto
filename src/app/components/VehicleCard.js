@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function VehicleCard({ vehicle }) {
   const {
@@ -39,7 +40,7 @@ export default function VehicleCard({ vehicle }) {
         skewV === 0 && skewH === 0;
     if (isDefault) return {};
     return {
-      transform: `perspective(800px) scale(${zoom}) translate(${panX}px, ${panY}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`,
+      transform: `perspective(800px) scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px) rotateX(${skewV}deg) rotateY(${skewH}deg)`,
       filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`,
     };
   })();
@@ -48,11 +49,12 @@ export default function VehicleCard({ vehicle }) {
     <Link href={`/catalogo/${id}`} className="vehicle-card">
       {/* Image */}
       <div className="vehicle-card-image">
-        <img
+        <Image
           src={image_urls?.[0] || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=70'}
           alt={`${brand} ${model} ${year}`}
-          loading="lazy"
-          style={coverEditStyle}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+          style={{ objectFit: 'cover', ...coverEditStyle }}
         />
         {featured && (
           <div className="vehicle-card-badge">
