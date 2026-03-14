@@ -433,7 +433,8 @@ export default function AgendarWizard() {
                         }),
                     });
                     const text2 = await crmRes.text();
-                    const crmData = text2 ? JSON.parse(text2) : {};
+                    let crmData = {};
+                    try { crmData = text2 ? JSON.parse(text2) : {}; } catch (_) { /* non-JSON response, ignore */ }
                     if (!crmRes.ok || !crmData.ok) {
                         console.warn('[Wizard] CRM consignacion warning:', crmData.error);
                     }
@@ -442,23 +443,12 @@ export default function AgendarWizard() {
                 }
 
                 // 3. Also call the MrCar proxy for backward compatibility
-                // Non-blocking: we already saved to Supabase + CRM above — don't let
-                // this legacy call block the success screen if it fails or returns empty.
-                try {
-                    const res = await fetch('/api/mrcar/schedule-appointment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (res.ok) {
-                        const text = await res.text();
-                        if (text) {
-                            try { JSON.parse(text); } catch (_) { /* ignore */ }
-                        }
-                    }
-                } catch (_) {
-                    // Ignore — legacy call, appointment already saved above
-                }
+                // Fully non-blocking — appointment already saved to Supabase + CRM above.
+                fetch('/api/mrcar/schedule-appointment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).catch(() => { /* ignore legacy errors */ });
 
                 setLoading(false);
                 setSuccess(true);
