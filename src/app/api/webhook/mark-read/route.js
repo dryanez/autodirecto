@@ -2,8 +2,6 @@ export const runtime = 'nodejs';
 
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'nodejs';
-
 export async function POST(request) {
   // Create client inside handler so env vars are resolved at runtime, not build time
   const supabaseAdmin = createClient(
