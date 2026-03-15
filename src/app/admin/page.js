@@ -211,7 +211,7 @@ export default function AdminPage() {
       {/* ── WhatsApp native dashboard ──────────────────────────── */}
       <div style={{
         flex: 1, display: activeTab === 'whatsapp' ? 'flex' : 'none',
-        flexDirection: 'column', overflow: 'hidden',
+        flexDirection: 'column', overflow: 'hidden', minHeight: 0,
       }}>
         {activeTab === 'whatsapp' && <WhatsAppDashboard />}
       </div>

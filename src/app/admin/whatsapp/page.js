@@ -149,7 +149,8 @@ export default function WhatsAppDashboard() {
   const [search, setSearch]               = useState('');
   const [statusFilter, setStatusFilter]   = useState('all');
   const [stats, setStats]                 = useState({ total: 0, open: 0, today: 0 });
-  const messagesEndRef = useRef(null);
+  const messagesEndRef    = useRef(null);
+  const messagesContainerRef = useRef(null);
   const convSubRef     = useRef(null);
   const msgSubRef      = useRef(null);
 
@@ -245,7 +246,10 @@ export default function WhatsAppDashboard() {
 
   // ── Scroll to bottom when messages change ──
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   // ── Select conversation ──
@@ -274,7 +278,7 @@ export default function WhatsAppDashboard() {
     <div style={{
       display: 'flex', height: '100%', overflow: 'hidden',
       background: '#0a0e1a', fontFamily: "'Outfit', 'Inter', sans-serif",
-      color: '#e5e7eb',
+      color: '#e5e7eb', minHeight: 0,
     }}>
 
       {/* ══ LEFT SIDEBAR ═══════════════════════════════════════ */}
@@ -386,7 +390,7 @@ export default function WhatsAppDashboard() {
       </div>
 
       {/* ══ MAIN CHAT AREA ══════════════════════════════════════ */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
 
         {!activeConvId ? (
           /* Empty state */
@@ -468,7 +472,7 @@ export default function WhatsAppDashboard() {
             </div>
 
             {/* Messages */}
-            <div style={{
+            <div ref={messagesContainerRef} style={{
               flex: 1, overflowY: 'auto', padding: '1rem 0',
               background: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.005) 0px, rgba(255,255,255,0.005) 1px, transparent 1px, transparent 40px)',
             }}>
