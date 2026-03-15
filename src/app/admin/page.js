@@ -19,9 +19,24 @@ const WhatsAppDashboard = dynamic(() => import('./whatsapp/page'), {
   ssr: false,
 });
 
+// Lazy-load Instagram Overlay Pro dashboard
+const InstagramOverlayDashboard = dynamic(() => import('./instagram/page'), {
+  loading: () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', color: '#6b7280', fontSize: '0.85rem',
+      fontFamily: "'Outfit', sans-serif",
+    }}>
+      Cargando Overlay Pro…
+    </div>
+  ),
+  ssr: false,
+});
+
 const TABS = [
   { id: 'crm',       label: '🏁 Pipeline',  path: '',          iframe: true  },
   { id: 'funnels',   label: '🚗 Funnels',   path: '/funnels',  iframe: true  },
+  { id: 'instagram', label: '📸 Instagram', path: null,        iframe: false },
   { id: 'whatsapp',  label: '💬 WhatsApp',  path: null,        iframe: false },
 ];
 
@@ -134,7 +149,9 @@ export default function AdminPage() {
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   background: activeTab === tab.id
-                    ? tab.id === 'whatsapp' ? '#25D366' : '#3b82f6'
+                    ? tab.id === 'whatsapp' ? '#25D366'
+                    : tab.id === 'instagram' ? '#e1306c'
+                    : '#3b82f6'
                     : 'transparent',
                   color: activeTab === tab.id ? '#fff' : '#9ca3af',
                   position: 'relative',
@@ -207,6 +224,14 @@ export default function AdminPage() {
           allow="camera; microphone; clipboard-write"
         />
       ))}
+
+      {/* ── Instagram Overlay Pro dashboard ───────────────────── */}
+      <div style={{
+        flex: 1, display: activeTab === 'instagram' ? 'flex' : 'none',
+        flexDirection: 'column', overflow: 'hidden', minHeight: 0,
+      }}>
+        {activeTab === 'instagram' && <InstagramOverlayDashboard />}
+      </div>
 
       {/* ── WhatsApp native dashboard ──────────────────────────── */}
       <div style={{
