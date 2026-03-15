@@ -106,7 +106,7 @@ Autodirecto/                        ← Root (Next.js frontend repo: dryanez/aut
 
 **Path:** `SimplyAPI/` (repo: `dryanez/autodirectocrm`)  
 **Tech:** Python / Flask + Alpine.js frontend  
-**Deployed on:** Railway → `autodirectocrm.vercel.app`  
+**Deployed on:** Vercel → `autodirectocrm.vercel.app`  
 **Local dev:** `python app.py` → http://localhost:8080
 
 SimplyAPI is the central backend AND the CRM dashboard. `app.py` (~5,500 lines) serves both the REST API and the single-page CRM UI (`templates/index.html`, ~6,000 lines built with Alpine.js + Tailwind CSS).
@@ -560,10 +560,17 @@ npm run dev     # → http://localhost:5173
 | System | Platform | URL |
 |--------|----------|-----|
 | Public Site (Next.js) | Vercel | autodirecto.vercel.app / autodirecto.cl |
-| CRM (SimplyAPI + Flask) | Railway | autodirectocrm.vercel.app |
+| **CRM (SimplyAPI + Flask)** | **Vercel** | **autodirectocrm.vercel.app** |
 | Camera PWA | Vercel | cameracar.vercel.app |
 | MrCar (Flask) | Vercel | mrcar-cotizacion.vercel.app |
 | Database | Supabase | kqympdxeszdyppbhtzbm.supabase.co |
+| Funnels Scraper (Playwright) | Railway | autodirecto-production.up.railway.app |
+| CAV Worker (Playwright) | Railway | cav-worker-production.up.railway.app |
+
+> **IMPORTANT:** The CRM backend (SimplyAPI) is deployed on **Vercel** via `vercel.json`.
+> Railway is used **only** for long-running Playwright workers (Funnels scraper, CAV Worker)
+> that need a persistent container. When running on Vercel, SimplyAPI proxies scrape requests
+> to the Railway Funnels worker via `RAILWAY_URL` env var.
 
 ---
 
