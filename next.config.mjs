@@ -47,6 +47,25 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400' },
         ],
       },
+      // ── Cache static assets aggressively (JS, CSS, images, fonts) ──
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/_next/image(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
+        ],
+      },
+      {
+        source: '/(.*)\\.(svg|png|jpg|jpeg|webp|avif|ico|woff|woff2)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, s-maxage=2592000' },
+        ],
+      },
     ];
   },
 };
