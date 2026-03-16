@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🛡️ AUTODIRECTO EDGE FIREWALL
@@ -28,11 +28,11 @@ const BLOCKED_BOTS = [
 // ── Simple in-memory rate limiter (per edge instance) ──
 // Not perfect (each Vercel edge instance has its own map) but catches
 // single-IP floods which is 90% of the problem.
-const ipHits = new Map();
+const ipHits: Map<string, { windowStart: number; count: number }> = new Map();
 const RATE_WINDOW_MS = 60_000;   // 1 minute window
 const RATE_LIMIT = 60;           // max 60 requests per minute per IP (generous for humans)
 
-function isRateLimited(ip) {
+function isRateLimited(ip: string) {
   const now = Date.now();
   const record = ipHits.get(ip);
 
@@ -54,14 +54,14 @@ function cleanupStaleEntries() {
   const now = Date.now();
   if (now - lastCleanup < 300_000) return;
   lastCleanup = now;
-  for (const [ip, record] of ipHits) {
+  ipHits.forEach((record, ip) => {
     if (now - record.windowStart > RATE_WINDOW_MS * 2) {
       ipHits.delete(ip);
     }
-  }
+  });
 }
 
-export function middleware(request) {
+export function middleware(request: NextRequest) {
   const ua = request.headers.get('user-agent') || '';
   const path = request.nextUrl.pathname;
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
