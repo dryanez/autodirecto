@@ -1,58 +1,121 @@
 import { NextResponse } from 'next/server';
 
-// Known aggressive bot user-agent patterns
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🛡️ AUTODIRECTO EDGE FIREWALL
+// Blocks bots, rate-limits IPs, caches aggressively
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Known aggressive bot user-agent patterns (case-insensitive match)
 const BLOCKED_BOTS = [
+  // AI crawlers
   'GPTBot', 'ChatGPT-User', 'CCBot', 'anthropic-ai', 'Claude-Web',
-  'Bytespider', 'PetalBot', 'SemrushBot', 'AhrefsBot', 'MJ12bot',
-  'DotBot', 'BLEXBot', 'DataForSeoBot', 'magpie-crawler', 'Amazonbot',
-  'meta-externalagent', 'YandexBot', 'baiduspider', 'sogou', 'Scrapy',
-  'Python-urllib', 'python-requests', 'Go-http-client', 'Java/',
-  'libwww-perl', 'Wget', 'curl/', 'HTTrack', 'WebCopier',
-  'TurnitinBot', 'Linguee', 'dissertation', 'heritrix',
+  'Google-Extended', 'Applebot-Extended', 'PerplexityBot', 'cohere-ai',
+  // SEO crawlers (burn thousands of requests)
+  'SemrushBot', 'AhrefsBot', 'MJ12bot', 'DotBot', 'BLEXBot',
+  'DataForSeoBot', 'Screaming Frog', 'Rogerbot', 'SEOkicks',
+  // Asian bots
+  'Bytespider', 'PetalBot', 'baiduspider', 'sogou', 'YandexBot',
+  // Scraper / generic bots
+  'magpie-crawler', 'Amazonbot', 'meta-externalagent',
+  'Scrapy', 'Python-urllib', 'python-requests', 'Go-http-client',
+  'Java/', 'libwww-perl', 'Wget/', 'curl/', 'HTTrack', 'WebCopier',
+  'TurnitinBot', 'Linguee', 'heritrix', 'archive.org_bot',
+  'Nuclei', 'Nmap', 'ZmEu', 'masscan', 'zgrab',
+  // Misc
+  'FacebookBot', 'Twitterbot/0', 'Mail.RU_Bot', 'Applebot',
 ];
+
+// ── Simple in-memory rate limiter (per edge instance) ──
+// Not perfect (each Vercel edge instance has its own map) but catches
+// single-IP floods which is 90% of the problem.
+const ipHits = new Map();
+const RATE_WINDOW_MS = 60_000;   // 1 minute window
+const RATE_LIMIT = 60;           // max 60 requests per minute per IP (generous for humans)
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const record = ipHits.get(ip);
+
+  if (!record || now - record.windowStart > RATE_WINDOW_MS) {
+    ipHits.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+
+  record.count++;
+  if (record.count > RATE_LIMIT) {
+    return true;
+  }
+  return false;
+}
+
+// Cleanup stale entries every 5 minutes to prevent memory leak
+let lastCleanup = Date.now();
+function cleanupStaleEntries() {
+  const now = Date.now();
+  if (now - lastCleanup < 300_000) return;
+  lastCleanup = now;
+  for (const [ip, record] of ipHits) {
+    if (now - record.windowStart > RATE_WINDOW_MS * 2) {
+      ipHits.delete(ip);
+    }
+  }
+}
 
 export function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
   const path = request.nextUrl.pathname;
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+             request.headers.get('x-real-ip') || 'unknown';
 
-  // Block known aggressive bots immediately (returns 403, no edge compute)
+  // ── 1. Block known bots instantly ──
   const uaLower = ua.toLowerCase();
   for (const bot of BLOCKED_BOTS) {
     if (uaLower.includes(bot.toLowerCase())) {
-      return new NextResponse('Forbidden', { status: 403 });
+      return new NextResponse(null, { status: 403 });
     }
   }
 
-  // Block requests with no user-agent (usually bots/scrapers)
+  // ── 2. Block empty / suspicious user-agents ──
   if (!ua || ua.length < 10) {
-    return new NextResponse('Forbidden', { status: 403 });
+    return new NextResponse(null, { status: 403 });
   }
 
-  // Block direct access to API routes from outside (except CRM proxy and listings)
+  // ── 3. Rate limit per IP ──
+  cleanupStaleEntries();
+  if (isRateLimited(ip)) {
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: { 'Retry-After': '60' },
+    });
+  }
+
+  // ── 4. Block direct API hits from bots (no referer = likely a crawler) ──
   if (path.startsWith('/api/') && !path.startsWith('/api/listings') && !path.startsWith('/api/crm')) {
-    const origin = request.headers.get('origin') || '';
     const referer = request.headers.get('referer') || '';
-    // Allow same-origin requests
-    if (!origin && !referer) {
-      // Could be a direct bot hit
-      if (!ua.includes('Vercel') && !ua.includes('node')) {
-        return new NextResponse('Not Found', { status: 404 });
-      }
+    const origin = request.headers.get('origin') || '';
+    if (!origin && !referer && !ua.includes('Vercel') && !ua.includes('node')) {
+      return new NextResponse(null, { status: 404 });
     }
   }
 
+  // ── 5. Proceed with aggressive caching ──
   const response = NextResponse.next();
 
-  // Add cache headers for static pages to reduce re-renders
+  // Cache public pages at edge for 5 minutes (saves re-renders)
   if (path === '/' || path.startsWith('/catalogo') || path.startsWith('/vehiculo/')) {
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  }
+
+  // Cache robots.txt for 24h
+  if (path === '/robots.txt') {
+    response.headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
   }
 
   return response;
 }
 
 export const config = {
-  // Run on all routes except static files and images
+  // Run on all routes EXCEPT truly static files (those don't need middleware)
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|avif|ico|woff|woff2|css|js)$).*)',
   ],
