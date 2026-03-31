@@ -2196,6 +2196,12 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
     """
     group_url = group["url"]
     log_fn(f"🚀 Navigating to group: {group['name']}...")
+    # Check page is still alive before navigating — context can die after Buy & Sell submissions
+    try:
+        await page.evaluate("() => true")
+    except Exception:
+        log_fn("  ❌ Browser context closed — cannot continue")
+        return False
     try:
         await page.goto(group_url, wait_until="domcontentloaded", timeout=25000)
         await asyncio.sleep(5)
@@ -2362,6 +2368,8 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 log_fn("  ⚠️ Could not upload photos to any file input")
 
         # 3. Fill Vehicle Specifics (Year, Make, Model, Price)
+        # Uses get_by_label() as primary strategy — FB forms associate fields via
+        # <label> elements, not aria-label, so query_selector('[aria-label="Year"]') fails.
         car_year = str(car.get("car_year", ""))
         car_make = car.get("car_make", "")
         car_model = car.get("car_model", "")
@@ -2371,128 +2379,90 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             price_match = re.search(r'\$[\d\.]+', caption)
             car_price = price_match.group(0).replace('$', '').replace('.', '') if price_match else ""
 
-        # Year: type then select from autocomplete dropdown
+        async def _fill_and_pick(label_texts, value, field_name, wait_after=0.5, pick_option=True):
+            """Fill a field by label, then select from autocomplete if applicable."""
+            if not value:
+                return False
+            val = str(value)
+            trigger = None
+            # 1. get_by_label (finds inputs associated via <label> elements)
+            for lbl in label_texts:
+                try:
+                    loc = page.get_by_label(lbl, exact=False)
+                    if await loc.count() > 0:
+                        trigger = await loc.first.element_handle()
+                        break
+                except Exception:
+                    pass
+            # 2. aria-label fallback
+            if not trigger:
+                for lbl in label_texts:
+                    try:
+                        el = await page.query_selector(f'[aria-label="{lbl}"]')
+                        if el:
+                            trigger = el
+                            break
+                    except Exception:
+                        pass
+            # 3. placeholder fallback
+            if not trigger:
+                for lbl in label_texts:
+                    try:
+                        loc = page.get_by_placeholder(lbl, exact=False)
+                        if await loc.count() > 0:
+                            trigger = await loc.first.element_handle()
+                            break
+                    except Exception:
+                        pass
+            if not trigger:
+                log_fn(f"  ⚠️ {field_name} field not found")
+                return False
+            try:
+                await trigger.click(force=True)
+                await asyncio.sleep(0.3)
+                await page.keyboard.press("Meta+A")
+                await page.keyboard.press("Control+A")
+                await page.keyboard.press("Backspace")
+                await trigger.type(val, delay=50)
+                if pick_option:
+                    await asyncio.sleep(1.5)
+                    # Try to click the matching option from the autocomplete list
+                    opt = page.get_by_role("option", name=re.compile(re.escape(val), re.IGNORECASE))
+                    if await opt.count() > 0:
+                        await opt.first.click()
+                        log_fn(f"  ✅ {field_name}: '{val}' (dropdown)")
+                    else:
+                        # Fallback: keyboard nav
+                        await page.keyboard.press("ArrowDown")
+                        await asyncio.sleep(0.2)
+                        await page.keyboard.press("Enter")
+                        log_fn(f"  ✅ {field_name}: '{val}' (keyboard nav)")
+                else:
+                    log_fn(f"  ✅ {field_name}: '{val}'")
+                await asyncio.sleep(wait_after)
+                return True
+            except Exception as e:
+                log_fn(f"  ⚠️ Could not fill {field_name}: {e}")
+                return False
+
         if car_year:
             log_fn(f"  📝 Filling Year: {car_year}...")
-            try:
-                year_el = None
-                for sel in ['[aria-label="Year"]', '[aria-label="Año"]',
-                            'input[placeholder*="Year"]', 'input[placeholder*="Año"]']:
-                    year_el = await page.query_selector(sel)
-                    if year_el:
-                        break
-                if year_el:
-                    await year_el.click(force=True)
-                    await asyncio.sleep(0.3)
-                    await page.keyboard.press("Control+A")
-                    await page.keyboard.press("Backspace")
-                    await year_el.type(car_year, delay=50)
-                    await asyncio.sleep(1)
-                    year_option = page.get_by_role("option", name=re.compile(car_year))
-                    if await year_option.count() > 0:
-                        await year_option.first.click()
-                        log_fn("  ✅ Year selected from dropdown")
-                    else:
-                        await page.keyboard.press("ArrowDown")
-                        await asyncio.sleep(0.2)
-                        await page.keyboard.press("Enter")
-                        log_fn("  ✅ Year entered (keyboard nav)")
-                    await asyncio.sleep(0.5)
-                else:
-                    log_fn("  ⚠️ Year field not found")
-            except Exception as e:
-                log_fn(f"  ⚠️ Could not fill Year: {e}")
+            await _fill_and_pick(["Year", "Año", "year", "año"], car_year, "Year", wait_after=0.5)
 
-        # Make: type then select from autocomplete (FB dropdown)
         if car_make:
             log_fn(f"  📝 Filling Make: {car_make}...")
-            try:
-                make_el = None
-                for sel in ['[aria-label="Make"]', '[aria-label="Marca"]',
-                            'input[placeholder*="Make"]', 'input[placeholder*="Marca"]',
-                            'input[placeholder*="make"]', 'input[placeholder*="marca"]']:
-                    make_el = await page.query_selector(sel)
-                    if make_el:
-                        break
-                if make_el:
-                    await make_el.click(force=True)
-                    await asyncio.sleep(0.3)
-                    await page.keyboard.press("Control+A")
-                    await page.keyboard.press("Backspace")
-                    await make_el.type(car_make, delay=50)
-                    await asyncio.sleep(2)
-                    make_option = page.get_by_role("option", name=re.compile(car_make, re.IGNORECASE))
-                    if await make_option.count() > 0:
-                        await make_option.first.click()
-                        log_fn(f"  ✅ Make '{car_make}' selected from dropdown")
-                    else:
-                        await page.keyboard.press("ArrowDown")
-                        await asyncio.sleep(0.2)
-                        await page.keyboard.press("Enter")
-                        log_fn(f"  ✅ Make '{car_make}' entered (keyboard nav)")
-                    await asyncio.sleep(1.5)  # Wait for Model field to populate
-                else:
-                    log_fn("  ⚠️ Make field not found")
-            except Exception as e:
-                log_fn(f"  ⚠️ Could not fill Make: {e}")
+            await _fill_and_pick(["Make", "Marca", "Vehicle make", "make", "marca"], car_make, "Make", wait_after=2.0)
 
-        # Model: type then select from autocomplete (depends on Make)
         if car_model:
             log_fn(f"  📝 Filling Model: {car_model}...")
-            try:
-                model_el = None
-                for sel in ['[aria-label="Model"]', '[aria-label="Modelo"]',
-                            'input[placeholder*="Model"]', 'input[placeholder*="Modelo"]',
-                            'input[placeholder*="model"]', 'input[placeholder*="modelo"]']:
-                    model_el = await page.query_selector(sel)
-                    if model_el:
-                        break
-                if model_el:
-                    await model_el.click(force=True)
-                    await asyncio.sleep(0.3)
-                    await page.keyboard.press("Control+A")
-                    await page.keyboard.press("Backspace")
-                    await model_el.type(car_model, delay=50)
-                    await asyncio.sleep(2)
-                    model_option = page.get_by_role("option", name=re.compile(car_model, re.IGNORECASE))
-                    if await model_option.count() > 0:
-                        await model_option.first.click()
-                        log_fn(f"  ✅ Model '{car_model}' selected from dropdown")
-                    else:
-                        await page.keyboard.press("ArrowDown")
-                        await asyncio.sleep(0.2)
-                        await page.keyboard.press("Enter")
-                        log_fn(f"  ✅ Model '{car_model}' entered (keyboard nav)")
-                    await asyncio.sleep(0.5)
-                else:
-                    log_fn("  ⚠️ Model field not found")
-            except Exception as e:
-                log_fn(f"  ⚠️ Could not fill Model: {e}")
+            await _fill_and_pick(["Model", "Modelo", "Vehicle model", "model", "modelo"], car_model, "Model", wait_after=0.5)
 
-        # Price
         if car_price:
             log_fn(f"  📝 Filling Price: {car_price}...")
-            try:
-                price_el = None
-                for sel in ['[aria-label="Price"]', '[aria-label="Precio"]',
-                            '[aria-label="Listing price"]', '[aria-label="Precio de publicación"]',
-                            'input[placeholder*="Price"]', 'input[placeholder*="Precio"]',
-                            'input[placeholder*="price"]', 'input[placeholder*="precio"]']:
-                    price_el = await page.query_selector(sel)
-                    if price_el:
-                        break
-                if price_el:
-                    await price_el.click(force=True)
-                    await asyncio.sleep(0.3)
-                    await page.keyboard.press("Control+A")
-                    await page.keyboard.press("Backspace")
-                    await price_el.type(car_price, delay=30)
-                    log_fn(f"  ✅ Price '{car_price}' entered")
-                    await asyncio.sleep(0.5)
-                else:
-                    log_fn("  ⚠️ Price field not found")
-            except Exception as e:
-                log_fn(f"  ⚠️ Could not fill Price: {e}")
+            await _fill_and_pick(
+                ["Price", "Precio", "Listing price", "Precio de publicación", "price", "precio"],
+                car_price, "Price", pick_option=False
+            )
 
         # 4. Fill description (avoid re-filling structured fields)
         log_fn("  📝 Writing description...")
@@ -2581,6 +2551,14 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                     pass
             if not confirmed:
                 log_fn("  ⚠️ Publish clicked — could not find confirmation text, assuming success")
+            # Navigate away from the listing confirmation page before returning.
+            # This prevents FB's JS on the confirmation page from invalidating the
+            # Playwright page context during the inter-group delay (browser crash fix).
+            try:
+                await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+                await asyncio.sleep(2)
+            except Exception:
+                pass
             return True
 
         log_fn("  ❌ Could not click Publish/List — Buy & Sell post FAILED")
