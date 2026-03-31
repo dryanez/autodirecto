@@ -2326,6 +2326,46 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 pass
             return False
 
+        # 1b. Select Vehicle Type toggle (Car/Truck) — shown at top of form right after
+        #     "Vehicle for sale" is selected, before the Year/Make/Model fields appear.
+        #     Quick search only — not all groups show this toggle, so don't block on it.
+        log_fn("  🚙 Selecting Vehicle Type (Car/Truck)...")
+        vtype_selected = False
+        for vtype in ["Car/Truck", "Auto/Camioneta", "Car", "Auto"]:
+            if vtype_selected:
+                break
+            try:
+                loc = page.get_by_text(vtype, exact=True)
+                if await loc.count() > 0:
+                    for i in range(min(await loc.count(), 3)):
+                        try:
+                            el = loc.nth(i)
+                            if await el.is_visible():
+                                await el.click()
+                                log_fn(f"  ✅ Vehicle Type: '{vtype}'")
+                                vtype_selected = True
+                                await asyncio.sleep(1.5)
+                                break
+                        except Exception:
+                            continue
+            except Exception:
+                pass
+        if not vtype_selected:
+            # Try role-based (radio buttons)
+            for vtype in ["Car/Truck", "Auto/Camioneta"]:
+                try:
+                    loc = page.get_by_role("radio", name=re.compile(vtype, re.IGNORECASE))
+                    if await loc.count() > 0:
+                        await loc.first.click()
+                        log_fn(f"  ✅ Vehicle Type (radio): '{vtype}'")
+                        vtype_selected = True
+                        await asyncio.sleep(1.5)
+                        break
+                except Exception:
+                    pass
+        if not vtype_selected:
+            log_fn("  ⚠️ Vehicle Type toggle not found on this group — continuing")
+
         # 2. Upload photos
         log_fn("  📷 Uploading photos...")
         file_inputs = await page.query_selector_all('input[type="file"]')
@@ -2366,47 +2406,6 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 await asyncio.sleep(3)
             else:
                 log_fn("  ⚠️ Could not upload photos to any file input")
-
-        # 2b. Select Vehicle Type (Car/Truck toggle) — appears after "Vehicle for sale"
-        # This is a toggle row at the top of the form: Car/Truck | Motorcycle | Powersport…
-        log_fn("  🚗 Selecting Vehicle Type (Car/Truck)...")
-        vtype_selected = False
-        for vtype in ["Car/Truck", "Auto/Camioneta", "Car", "Auto", "Truck", "Camioneta"]:
-            if vtype_selected:
-                break
-            try:
-                loc = page.get_by_text(vtype, exact=False)
-                cnt = await loc.count()
-                for i in range(min(cnt, 5)):
-                    try:
-                        el = loc.nth(i)
-                        if await el.is_visible():
-                            await el.click()
-                            log_fn(f"  ✅ Vehicle Type: '{vtype}'")
-                            vtype_selected = True
-                            await asyncio.sleep(2)
-                            break
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-        if not vtype_selected:
-            for role_name in ["radio", "button", "option"]:
-                if vtype_selected:
-                    break
-                for vtype in ["Car/Truck", "Auto/Camioneta", "Car"]:
-                    try:
-                        loc = page.get_by_role(role_name, name=re.compile(vtype, re.IGNORECASE))
-                        if await loc.count() > 0:
-                            await loc.first.click()
-                            log_fn(f"  ✅ Vehicle Type ({role_name}): '{vtype}'")
-                            vtype_selected = True
-                            await asyncio.sleep(2)
-                            break
-                    except Exception:
-                        pass
-        if not vtype_selected:
-            log_fn("  ⚠️ Vehicle Type not found — continuing anyway")
 
         # 3. Fill Vehicle Specifics (Year, Make, Model, Price)
         # Uses get_by_label() as primary strategy — FB forms associate fields via
