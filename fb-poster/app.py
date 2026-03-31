@@ -2270,9 +2270,14 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
         await sell_btn.click()
         await asyncio.sleep(4)
 
-        # 1. Select Vehicle category — FB shows "What are you selling?" cards
+        # 1. Select Vehicle category — FB opens a modal ("What are you selling?")
+        # CRITICAL: scope all searches to [role="dialog"] — the group feed contains
+        # posts titled "Vehicle for sale" which get_by_text() would hit instead.
         log_fn("  🚗 Selecting Vehicle category...")
         vehicle_clicked = False
+
+        # Find the modal dialog that opened after "Sell Something"
+        modal = page.locator('[role="dialog"]').last
 
         vehicle_texts = [
             "Vehicle for sale", "Vehículo en venta",
@@ -2280,12 +2285,12 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             "Autos", "Auto",
         ]
 
-        # get_by_text is the most flexible — checks visibility and partial match
+        # Search WITHIN the dialog only
         for cat_text in vehicle_texts:
             if vehicle_clicked:
                 break
             try:
-                loc = page.get_by_text(cat_text, exact=False)
+                loc = modal.get_by_text(cat_text, exact=False)
                 cnt = await loc.count()
                 for i in range(min(cnt, 5)):
                     try:
@@ -2294,7 +2299,7 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                             await el.click()
                             log_fn(f"  ✅ Vehicle category: '{cat_text}'")
                             vehicle_clicked = True
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(3)
                             break
                     except Exception:
                         continue
@@ -2302,18 +2307,18 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 pass
 
         if not vehicle_clicked:
-            # Fallback: try role-based selectors (radio/button/option/listitem)
+            # Role-based fallback, still scoped to modal
             for role_name in ["radio", "button", "option", "listitem"]:
                 if vehicle_clicked:
                     break
                 for cat_text in vehicle_texts[:4]:
                     try:
-                        loc = page.get_by_role(role_name, name=re.compile(cat_text, re.IGNORECASE))
+                        loc = modal.get_by_role(role_name, name=re.compile(cat_text, re.IGNORECASE))
                         if await loc.count() > 0:
                             await loc.first.click()
                             log_fn(f"  ✅ Vehicle category ({role_name}): '{cat_text}'")
                             vehicle_clicked = True
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(3)
                             break
                     except Exception:
                         pass
@@ -2326,20 +2331,22 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 pass
             return False
 
-        # 1b. Select Vehicle Type toggle (Car/Truck) — shown at top of form right after
-        #     "Vehicle for sale" is selected. This field is REQUIRED — if skipped, the
-        #     form will not submit. Wait for the form to render before searching.
+        # 1b. Select Vehicle Type toggle (Car/Truck) — required field at top of form.
+        # After clicking "Vehicle for sale", a NEW dialog (or updated dialog) shows the
+        # vehicle listing form. Scope the search to this dialog to avoid false matches
+        # on the group feed.
         await asyncio.sleep(2)
         log_fn("  🚙 Selecting Vehicle Type (Car/Truck)...")
         vtype_selected = False
+        # Re-acquire modal after category selection (the dialog may have updated)
+        form_modal = page.locator('[role="dialog"]').last
 
-        # Try every plausible text variant (EN + ES), exact=False
         for vtype in ["Car/Truck", "Auto/Camioneta", "Automóvil/Camioneta",
-                      "Car", "Auto", "Automóvil", "Carro", "Truck", "Camioneta"]:
+                      "Car", "Auto", "Automóvil", "Carro"]:
             if vtype_selected:
                 break
             try:
-                loc = page.get_by_text(vtype, exact=False)
+                loc = form_modal.get_by_text(vtype, exact=False)
                 cnt = await loc.count()
                 for i in range(min(cnt, 5)):
                     try:
@@ -2356,13 +2363,12 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 pass
 
         if not vtype_selected:
-            # Try radio/button roles
             for role_name in ["radio", "button", "option"]:
                 if vtype_selected:
                     break
                 for vtype in ["Car/Truck", "Auto/Camioneta", "Car", "Auto", "Automóvil"]:
                     try:
-                        loc = page.get_by_role(role_name, name=re.compile(vtype, re.IGNORECASE))
+                        loc = form_modal.get_by_role(role_name, name=re.compile(vtype, re.IGNORECASE))
                         if await loc.count() > 0:
                             await loc.first.click()
                             log_fn(f"  ✅ Vehicle Type ({role_name}): '{vtype}'")
@@ -2373,22 +2379,30 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                         pass
 
         if not vtype_selected:
-            # Last resort: find "Vehicle type" label section and click the first option in it
+            # Last resort: click the first radio in the form
             try:
-                section = await page.query_selector('[aria-label="Vehicle type"], [aria-label="Tipo de vehículo"]')
-                if section:
-                    first_opt = await page.query_selector('[role="radio"], [role="option"]')
-                    if first_opt:
-                        await first_opt.click()
-                        txt = await first_opt.text_content() or "?"
-                        log_fn(f"  ✅ Vehicle Type (first option): '{txt.strip()}'")
-                        vtype_selected = True
-                        await asyncio.sleep(1.5)
+                first_radio = form_modal.locator('[role="radio"]').first
+                if await first_radio.count() > 0:
+                    txt = await first_radio.text_content() or "?"
+                    await first_radio.click()
+                    log_fn(f"  ✅ Vehicle Type (first radio): '{txt.strip()}'")
+                    vtype_selected = True
+                    await asyncio.sleep(1.5)
             except Exception:
                 pass
 
         if not vtype_selected:
-            log_fn("  ⚠️ Vehicle Type toggle not found — form may reject submission")
+            # Debug: capture page text from the dialog for next iteration
+            try:
+                import os
+                debug_path = os.path.expanduser("~/Desktop/fb_debug_vtype.png")
+                await page.screenshot(path=debug_path, full_page=False)
+                dialog_text = await form_modal.evaluate("el => el.innerText")
+                log_fn(f"  📸 Screenshot: {debug_path}")
+                log_fn(f"  📄 Dialog text: {dialog_text[:400]}")
+            except Exception:
+                pass
+            log_fn("  ⚠️ Vehicle Type not found — form may reject submission")
 
         # 2. Upload photos
         log_fn("  📷 Uploading photos...")
