@@ -2374,15 +2374,32 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             try:
                 await vtype_trigger.click()
                 await asyncio.sleep(1.5)
-                # Step 2: pick Car/Truck from expanded options
-                for vtype_opt in ["Car/Truck", "Auto/Camioneta", "Automóvil/Camioneta", "Car", "Auto", "Automóvil"]:
-                    opt = page.get_by_role("option", name=re.compile(vtype_opt, re.IGNORECASE))
-                    if await opt.count() > 0:
-                        await opt.first.click()
-                        log_fn(f"  ✅ Vehicle Type: '{vtype_opt}'")
-                        vtype_selected = True
-                        await asyncio.sleep(1.5)
-                        break
+                # Step 2: pick Car/Truck from expanded options.
+                # Avoid "/" in regex patterns — it breaks Playwright's CSS selector parser.
+                # Use get_by_text first, then role-based with safe patterns.
+                for vtype_opt in ["Car/Truck", "Auto/Camioneta", "Automóvil/Camioneta",
+                                   "Car", "Auto", "Automóvil"]:
+                    try:
+                        # get_by_text is safe with "/" — no CSS selector involved
+                        opt = page.get_by_text(vtype_opt, exact=False)
+                        if await opt.count() > 0:
+                            for i in range(min(await opt.count(), 5)):
+                                try:
+                                    el = opt.nth(i)
+                                    tag = await el.evaluate("e => e.tagName.toLowerCase()")
+                                    role = await el.get_attribute("role") or ""
+                                    if await el.is_visible() and (role in ("option", "menuitem", "radio") or tag in ("li", "span", "div")):
+                                        await el.click()
+                                        log_fn(f"  ✅ Vehicle Type: '{vtype_opt}'")
+                                        vtype_selected = True
+                                        await asyncio.sleep(1.5)
+                                        break
+                                except Exception:
+                                    continue
+                        if vtype_selected:
+                            break
+                    except Exception:
+                        pass
                 if not vtype_selected:
                     # ArrowDown + Enter fallback
                     await page.keyboard.press("ArrowDown")
