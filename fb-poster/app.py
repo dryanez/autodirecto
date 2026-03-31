@@ -2331,78 +2331,79 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 pass
             return False
 
-        # 1b. Select Vehicle Type toggle (Car/Truck) — required field at top of form.
-        # After clicking "Vehicle for sale", a NEW dialog (or updated dialog) shows the
-        # vehicle listing form. Scope the search to this dialog to avoid false matches
-        # on the group feed.
+        # 1b. Select Vehicle Type dropdown (Car/Truck) — collapsed dropdown in the form.
+        # The dialog text shows "Vehicle type" label with an empty value — must click
+        # the field to open it, then select "Car/Truck" from the expanded options.
         await asyncio.sleep(2)
         log_fn("  🚙 Selecting Vehicle Type (Car/Truck)...")
         vtype_selected = False
-        # Re-acquire modal after category selection (the dialog may have updated)
         form_modal = page.locator('[role="dialog"]').last
 
-        for vtype in ["Car/Truck", "Auto/Camioneta", "Automóvil/Camioneta",
-                      "Car", "Auto", "Automóvil", "Carro"]:
-            if vtype_selected:
-                break
+        # Step 1: click the Vehicle Type field to open its dropdown
+        vtype_trigger = None
+        for lbl in ["Vehicle type", "Tipo de vehículo", "Vehicle Type"]:
             try:
-                loc = form_modal.get_by_text(vtype, exact=False)
-                cnt = await loc.count()
-                for i in range(min(cnt, 5)):
-                    try:
-                        el = loc.nth(i)
-                        if await el.is_visible():
-                            await el.click()
-                            log_fn(f"  ✅ Vehicle Type: '{vtype}'")
-                            vtype_selected = True
-                            await asyncio.sleep(1.5)
-                            break
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-
-        if not vtype_selected:
-            for role_name in ["radio", "button", "option"]:
-                if vtype_selected:
+                loc = form_modal.get_by_label(lbl, exact=False)
+                if await loc.count() > 0:
+                    vtype_trigger = loc.first
                     break
-                for vtype in ["Car/Truck", "Auto/Camioneta", "Car", "Auto", "Automóvil"]:
-                    try:
-                        loc = form_modal.get_by_role(role_name, name=re.compile(vtype, re.IGNORECASE))
-                        if await loc.count() > 0:
-                            await loc.first.click()
-                            log_fn(f"  ✅ Vehicle Type ({role_name}): '{vtype}'")
-                            vtype_selected = True
-                            await asyncio.sleep(1.5)
-                            break
-                    except Exception:
-                        pass
-
-        if not vtype_selected:
-            # Last resort: click the first radio in the form
-            try:
-                first_radio = form_modal.locator('[role="radio"]').first
-                if await first_radio.count() > 0:
-                    txt = await first_radio.text_content() or "?"
-                    await first_radio.click()
-                    log_fn(f"  ✅ Vehicle Type (first radio): '{txt.strip()}'")
-                    vtype_selected = True
-                    await asyncio.sleep(1.5)
             except Exception:
                 pass
+        if not vtype_trigger:
+            # fallback: find by text label then get sibling/parent input
+            for lbl in ["Vehicle type", "Tipo de vehículo"]:
+                try:
+                    label_el = form_modal.get_by_text(lbl, exact=True)
+                    if await label_el.count() > 0:
+                        # Click the label — often makes the associated dropdown receive focus
+                        await label_el.first.click()
+                        await asyncio.sleep(1)
+                        # Now look for any open listbox option
+                        opt = page.get_by_role("option", name=re.compile(r"Car|Auto|Automóvil", re.IGNORECASE))
+                        if await opt.count() > 0:
+                            await opt.first.click()
+                            txt = await opt.first.text_content() or "Car"
+                            log_fn(f"  ✅ Vehicle Type (via label click): '{txt.strip()}'")
+                            vtype_selected = True
+                            await asyncio.sleep(1.5)
+                        break
+                except Exception:
+                    pass
+
+        if not vtype_selected and vtype_trigger:
+            try:
+                await vtype_trigger.click()
+                await asyncio.sleep(1.5)
+                # Step 2: pick Car/Truck from expanded options
+                for vtype_opt in ["Car/Truck", "Auto/Camioneta", "Automóvil/Camioneta", "Car", "Auto", "Automóvil"]:
+                    opt = page.get_by_role("option", name=re.compile(vtype_opt, re.IGNORECASE))
+                    if await opt.count() > 0:
+                        await opt.first.click()
+                        log_fn(f"  ✅ Vehicle Type: '{vtype_opt}'")
+                        vtype_selected = True
+                        await asyncio.sleep(1.5)
+                        break
+                if not vtype_selected:
+                    # ArrowDown + Enter fallback
+                    await page.keyboard.press("ArrowDown")
+                    await asyncio.sleep(0.3)
+                    await page.keyboard.press("Enter")
+                    log_fn("  ✅ Vehicle Type (keyboard nav)")
+                    vtype_selected = True
+                    await asyncio.sleep(1)
+            except Exception as e:
+                log_fn(f"  ⚠️ Vehicle Type click failed: {e}")
 
         if not vtype_selected:
-            # Debug: capture page text from the dialog for next iteration
             try:
                 import os
-                debug_path = os.path.expanduser("~/Desktop/fb_debug_vtype.png")
+                debug_path = os.path.expanduser("~/Desktop/fb_debug_vtype2.png")
                 await page.screenshot(path=debug_path, full_page=False)
                 dialog_text = await form_modal.evaluate("el => el.innerText")
-                log_fn(f"  📸 Screenshot: {debug_path}")
-                log_fn(f"  📄 Dialog text: {dialog_text[:400]}")
+                log_fn(f"  📸 {debug_path} | Dialog: {dialog_text[:300]}")
             except Exception:
                 pass
-            log_fn("  ⚠️ Vehicle Type not found — form may reject submission")
+            log_fn("  ⚠️ Vehicle Type not selected — form may reject")
 
         # 2. Upload photos
         log_fn("  📷 Uploading photos...")
