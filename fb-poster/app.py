@@ -3007,8 +3007,14 @@ def api_post():
         else:
             car["_images"] = []
 
-        selected_groups = [FB_GROUPS[i] for i in group_indices if 0 <= i < len(FB_GROUPS)]
         mode = data.get("mode", "legacy")
+        if group_indices:
+            selected_groups = [FB_GROUPS[i] for i in group_indices if 0 <= i < len(FB_GROUPS)]
+        elif mode == "groups":
+            # No specific indices given + groups mode → use all configured groups
+            selected_groups = FB_GROUPS
+        else:
+            selected_groups = []
 
         job_id = start_post_job(car, selected_groups, mode=mode)
         return jsonify({"ok": True, "job_id": job_id})
