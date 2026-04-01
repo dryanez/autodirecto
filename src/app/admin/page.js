@@ -275,16 +275,29 @@ export default function AdminPage() {
 
       {/* ── Iframes — both rendered, only active one visible ──────── */}
       {TABS.filter(t => t.iframe).map(tab => (
-        <iframe
+        <div
           key={tab.id}
-          src={`${CRM_URL}${tab.path}`}
           style={{
-            flex: 1, width: '100%', border: 'none',
-            display: activeTab === tab.id ? 'block' : 'none',
+            flex: 1,
+            display: activeTab === tab.id ? 'flex' : 'none',
+            overflow: isMobile ? 'auto' : 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            minHeight: 0,
           }}
-          title={tab.label}
-          allow="camera; microphone; clipboard-write"
-        />
+        >
+          <iframe
+            src={`${CRM_URL}${tab.path}`}
+            style={{
+              width: isMobile ? '1024px' : '100%',
+              minWidth: isMobile ? '1024px' : '100%',
+              height: '100%',
+              border: 'none',
+              flexShrink: 0,
+            }}
+            title={tab.label}
+            allow="camera; microphone; clipboard-write"
+          />
+        </div>
       ))}
 
       {/* ── Instagram Overlay Pro dashboard ───────────────────── */}

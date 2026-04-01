@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -466,6 +466,20 @@ export default function InstagramOverlayDashboard() {
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'editor'
+  const isMobileRef = useRef(false);
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      isMobileRef.current = mobile;
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Load logo & settings from localStorage
   useEffect(() => {
@@ -526,6 +540,7 @@ export default function InstagramOverlayDashboard() {
     setSelectedPhoto(null);
     setEditing(false);
     loadSocialPhotos(l);
+    if (isMobileRef.current) setMobileView('editor');
   };
 
   const handleSaveLogo = (dataUrl) => {
@@ -550,6 +565,8 @@ export default function InstagramOverlayDashboard() {
 
   // ── Render ──
   const sidebarW = '280px';
+  const showSidebar = !isMobile || mobileView === 'list';
+  const showMain    = !isMobile || mobileView === 'editor';
 
   return (
     <div style={{
@@ -569,7 +586,10 @@ export default function InstagramOverlayDashboard() {
 
       {/* ══ LEFT SIDEBAR — Car list ══════════════════════════════ */}
       <div style={{
-        width: sidebarW, minWidth: sidebarW, display: 'flex', flexDirection: 'column',
+        width: isMobile ? '100%' : sidebarW,
+        minWidth: isMobile ? 0 : sidebarW,
+        display: showSidebar ? 'flex' : 'none',
+        flexDirection: 'column',
         borderRight: '1px solid rgba(255,255,255,0.07)',
         background: '#0d1220',
       }}>
@@ -753,7 +773,10 @@ export default function InstagramOverlayDashboard() {
       </div>
 
       {/* ══ MAIN AREA ════════════════════════════════════════════ */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{
+        flex: 1, display: showMain ? 'flex' : 'none',
+        flexDirection: 'column', overflow: 'hidden', minHeight: 0,
+      }}>
         {editing && selectedPhoto && selectedListing ? (
           /* ── Overlay Editor ── */
           <OverlayEditor
@@ -769,6 +792,18 @@ export default function InstagramOverlayDashboard() {
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: '1rem', color: '#4b5563',
           }}>
+            {isMobile && (
+              <button
+                onClick={() => setMobileView('list')}
+                style={{
+                  background: 'none', border: '1px solid rgba(225,48,108,0.3)',
+                  borderRadius: '8px', padding: '0.4rem 1rem',
+                  color: '#e1306c', fontSize: '0.8rem', cursor: 'pointer',
+                }}
+              >
+                ← Volver a lista
+              </button>
+            )}
             <div style={{ fontSize: '3.5rem' }}>📸</div>
             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#6b7280' }}>
               Overlay Pro
@@ -791,11 +826,24 @@ export default function InstagramOverlayDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Header bar */}
             <div style={{
-              height: '52px', minHeight: '52px', padding: '0 1.25rem',
+              height: '52px', minHeight: '52px', padding: '0 1rem',
               background: '#0d1220', borderBottom: '1px solid rgba(255,255,255,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {isMobile && (
+                  <button
+                    onClick={() => setMobileView('list')}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#e1306c', fontSize: '1.1rem', padding: '0.25rem',
+                      display: 'flex', alignItems: 'center',
+                    }}
+                    aria-label="Volver"
+                  >
+                    ←
+                  </button>
+                )}
                 {selectedListing.image_urls?.[0] && (
                   <div style={{
                     width: '36px', height: '28px', borderRadius: '6px', overflow: 'hidden',
