@@ -2560,6 +2560,100 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 car_price, "Price", pick_option=False
             )
 
+        # 3b. Fill additional vehicle detail dropdowns (condition, fuel type, transmission, color)
+        # These are closed-select dropdowns — click the trigger, pick an option by text.
+        async def _select_dropdown(label_texts, option_candidates, field_name):
+            """Click a closed dropdown by label, then pick matching option via get_by_text."""
+            trigger = None
+            for lbl in label_texts:
+                try:
+                    loc = page.get_by_label(lbl, exact=False)
+                    if await loc.count() > 0:
+                        trigger = loc.first
+                        break
+                except Exception:
+                    pass
+            if not trigger:
+                log_fn(f"  ⚠️ {field_name} dropdown not found")
+                return False
+            try:
+                await trigger.click(force=True)
+                await asyncio.sleep(1.0)
+            except Exception as e:
+                log_fn(f"  ⚠️ {field_name} click failed: {e}")
+                return False
+            for opt_text in option_candidates:
+                try:
+                    opt = page.get_by_text(opt_text, exact=False)
+                    if await opt.count() > 0:
+                        for i in range(min(await opt.count(), 6)):
+                            try:
+                                el = opt.nth(i)
+                                tag = await el.evaluate("e => e.tagName.toLowerCase()")
+                                role = await el.get_attribute("role") or ""
+                                if await el.is_visible() and (role in ("option", "menuitem", "radio") or tag in ("li", "span", "div")):
+                                    await el.click()
+                                    log_fn(f"  ✅ {field_name}: '{opt_text}'")
+                                    await asyncio.sleep(0.8)
+                                    return True
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+            await page.keyboard.press("Escape")
+            log_fn(f"  ⚠️ {field_name}: no matching option found")
+            return False
+
+        # Vehicle condition
+        await _select_dropdown(
+            ["Vehicle condition", "Condición del vehículo", "Condition", "Condición"],
+            ["Good", "Very good", "Excellent", "Bueno", "Muy bueno", "Excelente"],
+            "Condition"
+        )
+
+        # Fuel type — map Spanish → English FB option
+        raw_fuel = (car.get("fuel_type") or "").strip().lower()
+        fuel_opts = {
+            "bencina": ["Gasoline", "Gas", "Gasolina"],
+            "diesel":  ["Diesel"],
+            "eléctrico": ["Electric", "Eléctrico"],
+            "electrico": ["Electric", "Eléctrico"],
+            "híbrido": ["Hybrid", "Híbrido"],
+            "hibrido":  ["Hybrid", "Híbrido"],
+        }.get(raw_fuel, ["Gasoline", "Gasolina"])  # default gasoline
+        await _select_dropdown(
+            ["Fuel type", "Tipo de combustible", "Combustible"],
+            fuel_opts,
+            "Fuel type"
+        )
+
+        # Transmission — map Spanish → English FB option
+        raw_trans = (car.get("transmission") or "").strip().lower()
+        if "auto" in raw_trans or "automát" in raw_trans:
+            trans_opts = ["Automatic transmission", "Automatic", "Automática"]
+        else:
+            trans_opts = ["Manual transmission", "Manual"]
+        await _select_dropdown(
+            ["Transmission", "Transmisión"],
+            trans_opts,
+            "Transmission"
+        )
+
+        # Exterior color (best-effort — not always in car data)
+        car_color = (car.get("color") or "").strip()
+        if car_color:
+            color_opts = [car_color]
+        else:
+            color_opts = []
+        if color_opts:
+            await _select_dropdown(
+                ["Exterior color", "Color exterior", "Color"],
+                color_opts,
+                "Exterior color"
+            )
+
+        await asyncio.sleep(1)
+
         # 4. Fill description (avoid re-filling structured fields)
         log_fn("  📝 Writing description...")
         await asyncio.sleep(1)
