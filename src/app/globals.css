@@ -1961,6 +1961,11 @@ textarea.input-field { resize: vertical; min-height: 120px; }
   .step-number { width: 56px; height: 56px; font-size: 1.25rem; }
 }
 
+/* --- Admin pages: hide public nav chrome for full-screen CRM --- */
+body.admin-page .navbar,
+body.admin-page footer { display: none !important; }
+body.admin-page main { padding-top: 0 !important; }
+
 /* --- Catalog vertical swipe on mobile --- */
 @media (max-width: 768px) {
   .catalog-layout .vehicles-grid {

@@ -48,6 +48,12 @@ export default function AdminPage() {
   const [whatsappUnread, setWhatsappUnread] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Hide public Navbar/Footer on admin pages — reclaim full screen
+  useEffect(() => {
+    document.body.classList.add('admin-page');
+    return () => document.body.classList.remove('admin-page');
+  }, []);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
     check();
@@ -119,7 +125,7 @@ export default function AdminPage() {
 
   return (
     <div style={{
-      height: '100vh', display: 'flex', flexDirection: 'column',
+      height: '100svh', display: 'flex', flexDirection: 'column',
       background: '#0a0e1a', fontFamily: "'Outfit', sans-serif",
     }}>
       {/* ── Top bar ─────────────────────────────────────────────────── */}
