@@ -12,6 +12,15 @@ export default function CatalogoPage() {
     const [selectedTransmission, setSelectedTransmission] = useState('');
     const [priceRange, setPriceRange] = useState('');
     const [sortBy, setSortBy] = useState('newest');
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 1024);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
 
     useEffect(() => {
         fetch('/api/listings')
@@ -55,6 +64,7 @@ export default function CatalogoPage() {
     const clearFilters = () => {
         setSearch(''); setSelectedBrand(''); setSelectedFuel('');
         setSelectedTransmission(''); setPriceRange(''); setSortBy('newest');
+        setFiltersOpen(false);
     };
 
     return (
@@ -62,7 +72,21 @@ export default function CatalogoPage() {
             <div className="catalog-layout">
                 {/* Sidebar Filters */}
                 <aside className="catalog-sidebar">
-                    <div className="filter-card">
+                    {isMobile && (
+                        <button
+                            className="btn btn-secondary"
+                            style={{
+                                width: '100%', marginBottom: 'var(--space-md)',
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                            onClick={() => setFiltersOpen(!filtersOpen)}
+                        >
+                            <span>🔍 Filtros {(selectedBrand || selectedFuel || selectedTransmission || priceRange || search) ? `(activos)` : ''}</span>
+                            <span style={{ transform: filtersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                        </button>
+                    )}
+                    <div className="filter-card" style={isMobile && !filtersOpen ? { display: 'none' } : {}}>
                         <h3>🔍 Filtros</h3>
 
                         <div className="filter-section">
