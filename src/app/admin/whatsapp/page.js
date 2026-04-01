@@ -149,10 +149,24 @@ export default function WhatsAppDashboard() {
   const [search, setSearch]               = useState('');
   const [statusFilter, setStatusFilter]   = useState('all');
   const [stats, setStats]                 = useState({ total: 0, open: 0, today: 0 });
+  const [isMobile, setIsMobile]           = useState(false);
+  const [mobileView, setMobileView]       = useState('list'); // 'list' | 'chat'
+  const isMobileRef                       = useRef(false);
   const messagesEndRef    = useRef(null);
   const messagesContainerRef = useRef(null);
   const convSubRef     = useRef(null);
   const msgSubRef      = useRef(null);
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      isMobileRef.current = mobile;
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // ── Load conversations ──
   const loadConversations = useCallback(async () => {
@@ -257,6 +271,7 @@ export default function WhatsAppDashboard() {
     setActiveConvId(conv.id);
     loadMessages(conv.id);
     if (conv.unread_count > 0) markAsRead(conv.id);
+    if (isMobileRef.current) setMobileView('chat');
   }, [loadMessages, markAsRead]);
 
   // ── Filtered conversations ──
@@ -273,6 +288,8 @@ export default function WhatsAppDashboard() {
 
   // ── Styles ──────────────────────────────────────────────────
   const sidebarW = '280px';
+  const showSidebar = !isMobile || mobileView === 'list';
+  const showChat    = !isMobile || mobileView === 'chat';
 
   return (
     <div style={{
@@ -283,7 +300,10 @@ export default function WhatsAppDashboard() {
 
       {/* ══ LEFT SIDEBAR ═══════════════════════════════════════ */}
       <div style={{
-        width: sidebarW, minWidth: sidebarW, display: 'flex', flexDirection: 'column',
+        width: isMobile ? '100%' : sidebarW,
+        minWidth: isMobile ? 0 : sidebarW,
+        display: showSidebar ? 'flex' : 'none',
+        flexDirection: 'column',
         borderRight: '1px solid rgba(255,255,255,0.07)',
         background: '#0d1220',
       }}>
@@ -390,7 +410,10 @@ export default function WhatsAppDashboard() {
       </div>
 
       {/* ══ MAIN CHAT AREA ══════════════════════════════════════ */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{
+        flex: 1, display: showChat ? 'flex' : 'none',
+        flexDirection: 'column', overflow: 'hidden', minHeight: 0,
+      }}>
 
         {!activeConvId ? (
           /* Empty state */
@@ -419,11 +442,24 @@ export default function WhatsAppDashboard() {
           <>
             {/* Chat header */}
             <div style={{
-              height: '52px', minHeight: '52px', padding: '0 1.25rem',
+              height: '52px', minHeight: '52px', padding: '0 1rem',
               background: '#0d1220', borderBottom: '1px solid rgba(255,255,255,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {isMobile && (
+                  <button
+                    onClick={() => setMobileView('list')}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#60a5fa', fontSize: '1.1rem', padding: '0.25rem',
+                      display: 'flex', alignItems: 'center',
+                    }}
+                    aria-label="Volver"
+                  >
+                    ←
+                  </button>
+                )}
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '50%',
                   background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',

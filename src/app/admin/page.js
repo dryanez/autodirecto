@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
@@ -46,6 +46,14 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('crm');
   const [whatsappUnread, setWhatsappUnread] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     try {
@@ -116,43 +124,132 @@ export default function AdminPage() {
     }}>
       {/* ── Top bar ─────────────────────────────────────────────────── */}
       <div style={{
-        height: '48px', minHeight: '48px', background: '#111827',
+        background: '#111827',
         borderBottom: '1px solid rgba(59,130,246,0.2)',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '0 1.25rem', zIndex: 10,
+        zIndex: 10, flexShrink: 0,
       }}>
-        {/* Left: brand + tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        {/* Row 1: brand + user/logout */}
+        <div style={{
+          height: '48px', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', padding: '0 1rem',
+        }}>
           <a href="/" style={{
-            fontSize: '1.1rem', fontWeight: 800, color: '#fff',
+            fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 800, color: '#fff',
             textDecoration: 'none', letterSpacing: '-0.5px',
           }}>
             Auto<span style={{ color: '#3b82f6' }}>Directo</span>
           </a>
 
-          {/* Tab switcher */}
+          {/* On desktop also show tabs inline */}
+          {!isMobile && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.25rem',
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '0.5rem', padding: '0.2rem',
+            }}>
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    padding: '0.2rem 0.75rem',
+                    borderRadius: '0.35rem',
+                    border: 'none',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: activeTab === tab.id
+                      ? tab.id === 'whatsapp' ? '#25D366'
+                      : tab.id === 'instagram' ? '#e1306c'
+                      : '#3b82f6'
+                      : 'transparent',
+                    color: activeTab === tab.id ? '#fff' : '#9ca3af',
+                    position: 'relative',
+                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                  }}
+                >
+                  {tab.label}
+                  {tab.id === 'whatsapp' && whatsappUnread > 0 && activeTab !== 'whatsapp' && (
+                    <span style={{
+                      background: '#ef4444', color: '#fff',
+                      borderRadius: '99px', fontSize: '0.6rem', fontWeight: 800,
+                      padding: '0 0.3rem', minWidth: '14px', height: '14px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      lineHeight: 1,
+                    }}>
+                      {whatsappUnread > 99 ? '99+' : whatsappUnread}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Right: user + logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%',
+              background: user?.color || '#3b82f6',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.75rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+            }}>
+              {user?.name?.[0]?.toUpperCase() || 'A'}
+            </div>
+            {!isMobile && (
+              <>
+                <span style={{ fontSize: '0.85rem', color: '#d1d5db', fontWeight: 500 }}>
+                  {user?.name}
+                </span>
+                <span style={{
+                  fontSize: '0.7rem', color: '#6b7280',
+                  background: '#1a1f35', padding: '0.15rem 0.45rem', borderRadius: '4px',
+                }}>
+                  {user?.role}
+                </span>
+              </>
+            )}
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: isMobile ? '0.35rem 0.6rem' : '0.35rem 0.875rem',
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: '0.5rem', color: '#fca5a5',
+                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              {isMobile ? '✕' : 'Salir'}
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2 (mobile only): scrollable tabs */}
+        {isMobile && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.25rem',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '0.5rem', padding: '0.2rem',
+            display: 'flex', overflowX: 'auto', gap: '0.25rem',
+            padding: '0 0.75rem 0.5rem',
+            scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
           }}>
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: '0.2rem 0.75rem',
+                  padding: '0.3rem 0.85rem',
                   borderRadius: '0.35rem',
                   border: 'none',
-                  fontSize: '0.8rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   transition: 'all 0.15s',
                   background: activeTab === tab.id
                     ? tab.id === 'whatsapp' ? '#25D366'
                     : tab.id === 'instagram' ? '#e1306c'
                     : '#3b82f6'
-                    : 'transparent',
+                    : 'rgba(255,255,255,0.07)',
                   color: activeTab === tab.id ? '#fff' : '#9ca3af',
                   position: 'relative',
                   display: 'flex', alignItems: 'center', gap: '0.3rem',
@@ -173,42 +270,7 @@ export default function AdminPage() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Right: user + logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{
-              width: '28px', height: '28px', borderRadius: '50%',
-              background: user?.color || '#3b82f6',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.75rem', fontWeight: 700, color: '#fff',
-            }}>
-              {user?.name?.[0]?.toUpperCase() || 'A'}
-            </div>
-            <span style={{ fontSize: '0.85rem', color: '#d1d5db', fontWeight: 500 }}>
-              {user?.name}
-            </span>
-            <span style={{
-              fontSize: '0.7rem', color: '#6b7280',
-              background: '#1a1f35', padding: '0.15rem 0.45rem', borderRadius: '4px',
-            }}>
-              {user?.role}
-            </span>
-          </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '0.35rem 0.875rem',
-              background: 'rgba(239,68,68,0.12)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              borderRadius: '0.5rem', color: '#fca5a5',
-              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Salir
-          </button>
-        </div>
+        )}
       </div>
 
       {/* ── Iframes — both rendered, only active one visible ──────── */}
