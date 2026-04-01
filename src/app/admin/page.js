@@ -280,19 +280,16 @@ export default function AdminPage() {
           style={{
             flex: 1,
             display: activeTab === tab.id ? 'flex' : 'none',
-            overflow: isMobile ? 'auto' : 'hidden',
-            WebkitOverflowScrolling: 'touch',
+            overflow: 'hidden',
             minHeight: 0,
           }}
         >
           <iframe
             src={`${CRM_URL}${tab.path}`}
             style={{
-              width: isMobile ? '1024px' : '100%',
-              minWidth: isMobile ? '1024px' : '100%',
+              width: '100%',
               height: '100%',
               border: 'none',
-              flexShrink: 0,
             }}
             title={tab.label}
             allow="camera; microphone; clipboard-write"
