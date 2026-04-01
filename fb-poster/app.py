@@ -2869,6 +2869,11 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             post_btn = await page.query_selector(f'div[aria-label="{lbl}"][role="button"]')
             if not post_btn:
                 post_btn = await page.query_selector(f'[aria-label="{lbl}"]')
+            if not post_btn:
+                # get_by_role fallback — FB may not use aria-label on the Post button
+                loc = page.get_by_role("button", name=re.compile(rf"^{lbl}$", re.IGNORECASE))
+                if await loc.count() > 0:
+                    post_btn = await loc.first.element_handle()
             if post_btn:
                 disabled_attr = await post_btn.get_attribute("aria-disabled")
                 iters = 0
@@ -2879,10 +2884,24 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 await post_btn.click()
                 log_fn("  ✅ Clicked Post")
                 await asyncio.sleep(5)
+                # Navigate to facebook.com to reset page state before next group.
+                # FB's post-submission page can become a dead context for subsequent navigations.
+                try:
+                    await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+                    await asyncio.sleep(2)
+                except Exception:
+                    pass
                 return True
         except Exception:
             pass
 
+    log_fn("  ⚠️ Could not find Post button — group post may have failed")
+    # Still navigate away to keep browser context alive for next group
+    try:
+        await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+        await asyncio.sleep(2)
+    except Exception:
+        pass
     return False
 
 
