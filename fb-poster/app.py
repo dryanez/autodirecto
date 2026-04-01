@@ -2016,6 +2016,21 @@ async def run_full_post_job(car, selected_groups, job_id, mode="legacy"):
                     if job.get("cancelled"):
                         break
                     log_fn(f"\n── Group {i+1}/{len(selected_groups)} ──")
+                    # Check page health before each group; recover if dead
+                    try:
+                        await page.evaluate("() => true")
+                    except Exception:
+                        log_fn("  🔄 Page context died — creating fresh page...")
+                        try:
+                            page = await context.new_page()
+                            await context.add_cookies(fb_cookies)
+                            await page.goto("https://www.facebook.com", wait_until="domcontentloaded", timeout=30000)
+                            await asyncio.sleep(3)
+                            log_fn("  ✅ New page created, session restored")
+                        except Exception as e:
+                            log_fn(f"  ❌ Could not recover page: {e}")
+                            job["result"]["groups_failed"].append(group["name"])
+                            continue
                     success = await post_to_group_native(page, group, car, image_paths, caption, log_fn)
                     if success:
                         job["result"]["groups_posted"].append(group["name"])
@@ -2237,8 +2252,23 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
         return await _fill_create_post_modal(page, image_paths, caption, log_fn)
 
     # ── State 2: 'Sell Something' button visible (Buy & Sell group) ───────────
-    # Wait extra for page to fully render before scanning for the button
+    # First, try to navigate to the "Buy & Sell" / "Listing" tab if present.
+    # Many FB groups land on "Discussion" by default — the "Sell Something"
+    # button only appears after switching to the Buy & Sell / Listing tab.
     await asyncio.sleep(2)
+
+    for tab_name in ["Buy and sell", "Buy & sell", "Compra y venta",
+                      "Listing", "Listings", "Publicaciones en venta",
+                      "Items for Sale"]:
+        try:
+            tab_loc = page.get_by_role("tab", name=re.compile(tab_name, re.IGNORECASE))
+            if await tab_loc.count() > 0:
+                await tab_loc.first.click()
+                log_fn(f"  📑 Clicked '{tab_name}' tab")
+                await asyncio.sleep(3)
+                break
+        except Exception:
+            pass
 
     sell_btn = None
     # Most reliable: get_by_role("button") with regex name match
@@ -2263,6 +2293,34 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                     break
             except Exception:
                 pass
+
+    # URL-based fallback: navigate to /buy_sell_discussion path for the group
+    if not sell_btn:
+        try:
+            base = group_url.rstrip("/")
+            sell_tab_url = base + "/buy_sell_discussion/"
+            log_fn(f"  🔄 Sell button not found — navigating to {sell_tab_url}")
+            await page.goto(sell_tab_url, wait_until="domcontentloaded", timeout=20000)
+            await asyncio.sleep(4)
+            # Re-check for sell button after navigating
+            try:
+                sell_loc = page.get_by_role("button", name=re.compile(r"Sell [Ss]omething|Vender algo", re.IGNORECASE))
+                if await sell_loc.count() > 0:
+                    sell_btn = await sell_loc.first.element_handle()
+            except Exception:
+                pass
+            if not sell_btn:
+                for lbl in ["Sell Something", "Vender algo", "Sell something"]:
+                    try:
+                        sell_btn = await page.query_selector(f'[aria-label="{lbl}"]')
+                        if not sell_btn:
+                            sell_btn = await page.query_selector(f'div[role="button"]:has-text("{lbl}")')
+                        if sell_btn:
+                            break
+                    except Exception:
+                        pass
+        except Exception as e:
+            log_fn(f"  ⚠️ /buy_sell_discussion nav failed: {e}")
 
     # ── BUY & SELL GROUP FLOW ───────────────────────────────────────────
     if sell_btn:
@@ -2475,6 +2533,14 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             price_match = re.search(r'\$[\d\.]+', caption)
             car_price = price_match.group(0).replace('$', '').replace('.', '') if price_match else ""
 
+        def _normalize(s):
+            """Strip accents for comparison: Citroën → Citroen"""
+            import unicodedata
+            return ''.join(
+                c for c in unicodedata.normalize('NFD', s)
+                if unicodedata.category(c) != 'Mn'
+            )
+
         async def _fill_and_pick(label_texts, value, field_name, wait_after=0.5, pick_option=True):
             """Fill a field by label, then select from autocomplete if applicable."""
             if not value:
@@ -2521,18 +2587,142 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 await page.keyboard.press("Backspace")
                 await trigger.type(val, delay=50)
                 if pick_option:
-                    await asyncio.sleep(1.5)
-                    # Try to click the matching option from the autocomplete list
+                    await asyncio.sleep(2.0)
+                    picked = False
+
+                    # Debug: dump what FB actually shows as autocomplete
+                    try:
+                        ac_debug = await page.evaluate("""() => {
+                            const results = [];
+                            // Check for role=listbox
+                            const listboxes = document.querySelectorAll('[role="listbox"]');
+                            results.push('listbox count: ' + listboxes.length);
+                            listboxes.forEach((lb, i) => {
+                                const kids = lb.querySelectorAll('*');
+                                const visible = [];
+                                kids.forEach(k => {
+                                    const t = (k.textContent || '').trim();
+                                    const r = k.getAttribute('role') || '';
+                                    if (t && t.length < 60 && k.offsetParent !== null) {
+                                        visible.push(k.tagName + '[role=' + r + ']: ' + t);
+                                    }
+                                });
+                                results.push('LB' + i + ': ' + visible.slice(0, 8).join(' | '));
+                            });
+                            // Check role=option anywhere
+                            const opts = document.querySelectorAll('[role="option"]');
+                            results.push('option count: ' + opts.length);
+                            opts.forEach((o, i) => {
+                                if (i < 5) results.push('OPT' + i + ': ' + (o.textContent || '').trim().slice(0, 40));
+                            });
+                            // Check for any ul/menu near focused element
+                            const active = document.activeElement;
+                            if (active) {
+                                const parent = active.closest('[role="dialog"]');
+                                if (parent) {
+                                    const uls = parent.querySelectorAll('ul, [role="menu"]');
+                                    results.push('ul/menu in dialog: ' + uls.length);
+                                    uls.forEach((u, i) => {
+                                        if (i < 3) results.push('UL' + i + ': ' + (u.textContent || '').trim().slice(0, 80));
+                                    });
+                                }
+                            }
+                            return results.join('\\n');
+                        }""")
+                        log_fn(f"  🔍 Autocomplete debug for {field_name}:\n{ac_debug}")
+                    except Exception as dbg_e:
+                        log_fn(f"  🔍 Autocomplete debug failed: {dbg_e}")
+
+                    # Strategy 1: exact role="option" match (try both accented and plain)
+                    val_norm = _normalize(val).lower()
                     opt = page.get_by_role("option", name=re.compile(re.escape(val), re.IGNORECASE))
                     if await opt.count() > 0:
                         await opt.first.click()
-                        log_fn(f"  ✅ {field_name}: '{val}' (dropdown)")
-                    else:
-                        # Fallback: keyboard nav
+                        log_fn(f"  ✅ {field_name}: '{val}' (dropdown exact)")
+                        picked = True
+                    # Strategy 2: scan all visible options with accent-insensitive match
+                    if not picked:
+                        try:
+                            all_opts = page.get_by_role("option")
+                            opt_count = await all_opts.count()
+                            for oi in range(min(opt_count, 80)):
+                                try:
+                                    opt_el = all_opts.nth(oi)
+                                    opt_text = (await opt_el.text_content() or "").strip()
+                                    opt_norm = _normalize(opt_text).lower()
+                                    if val_norm in opt_norm or opt_norm in val_norm or opt_norm == val_norm:
+                                        await opt_el.click()
+                                        log_fn(f"  ✅ {field_name}: '{opt_text}' (dropdown scan)")
+                                        picked = True
+                                        break
+                                except Exception:
+                                    continue
+                        except Exception:
+                            pass
+                    # Strategy 3: scan listbox items by any clickable child containing the text
+                    if not picked:
+                        try:
+                            listbox = page.locator('[role="listbox"]')
+                            if await listbox.count() > 0:
+                                items = listbox.first.locator('[role="option"], [role="listitem"], li, span, div')
+                                cnt = await items.count()
+                                for oi in range(min(cnt, 30)):
+                                    try:
+                                        item = items.nth(oi)
+                                        txt = (await item.text_content() or "").strip()
+                                        txt_norm = _normalize(txt).lower()
+                                        if txt and (val_norm in txt_norm or txt_norm.startswith(val_norm[:3])):
+                                            await item.click()
+                                            log_fn(f"  ✅ {field_name}: '{txt}' (listbox scan)")
+                                            picked = True
+                                            break
+                                    except Exception:
+                                        continue
+                        except Exception:
+                            pass
+                    # Strategy 4: FB uses ul > li for Make/Model autocomplete
+                    if not picked:
+                        try:
+                            found_items = await page.evaluate("""(searchVal) => {
+                                const uls = document.querySelectorAll('ul');
+                                for (const ul of uls) {
+                                    if (ul.offsetParent === null) continue;
+                                    const lis = ul.querySelectorAll('li');
+                                    for (let i = 0; i < lis.length; i++) {
+                                        const t = (lis[i].textContent || '').trim();
+                                        if (t.toLowerCase().includes(searchVal.toLowerCase())) {
+                                            return {index: i, text: t, ulIndex: Array.from(document.querySelectorAll('ul')).indexOf(ul)};
+                                        }
+                                    }
+                                }
+                                return null;
+                            }""", val)
+                            if found_items:
+                                # Click it via JS
+                                clicked_text = await page.evaluate("""(args) => {
+                                    const uls = document.querySelectorAll('ul');
+                                    const ul = uls[args.ulIndex];
+                                    if (!ul) return null;
+                                    const li = ul.querySelectorAll('li')[args.index];
+                                    if (!li) return null;
+                                    li.click();
+                                    // Also try clicking inner span/div
+                                    const inner = li.querySelector('span, div');
+                                    if (inner) inner.click();
+                                    return (li.textContent || '').trim();
+                                }""", found_items)
+                                if clicked_text:
+                                    log_fn(f"  ✅ {field_name}: '{clicked_text}' (ul>li click)")
+                                    picked = True
+                                    await asyncio.sleep(0.5)
+                        except Exception:
+                            pass
+                    # Strategy 5: keyboard nav — only if we truly couldn't find a match
+                    if not picked:
                         await page.keyboard.press("ArrowDown")
                         await asyncio.sleep(0.2)
                         await page.keyboard.press("Enter")
-                        log_fn(f"  ✅ {field_name}: '{val}' (keyboard nav)")
+                        log_fn(f"  ⚠️ {field_name}: '{val}' (keyboard fallback — may be wrong)")
                 else:
                     log_fn(f"  ✅ {field_name}: '{val}'")
                 await asyncio.sleep(wait_after)
@@ -2694,31 +2884,53 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
         await asyncio.sleep(1)
         log_fn("  🚀 Submitting vehicle listing...")
 
+        next_clicked = False
         for btn_text in ["Next", "Siguiente"]:
             try:
                 btn_loc = page.get_by_role("button", name=btn_text)
                 if await btn_loc.count() > 0:
                     btn_el = await btn_loc.first.element_handle()
-                    if await btn_el.get_attribute("aria-disabled") != "true":
+                    # Wait for Next to become enabled (fields might still be populating)
+                    disabled = await btn_el.get_attribute("aria-disabled")
+                    iters = 0
+                    while disabled == "true" and iters < 15:
+                        await asyncio.sleep(1)
+                        disabled = await btn_el.get_attribute("aria-disabled")
+                        iters += 1
+                    if disabled == "true":
+                        log_fn(f"  ⚠️ '{btn_text}' still disabled after {iters}s — required fields may be missing")
+                        try:
+                            import os
+                            debug_path = os.path.expanduser("~/Desktop/fb_debug_next_disabled.png")
+                            await page.screenshot(path=debug_path, full_page=False)
+                            dialog_text = await page.locator('[role="dialog"]').last.evaluate("el => el.innerText")
+                            log_fn(f"  📸 {debug_path} | Dialog: {dialog_text[:400]}")
+                        except Exception:
+                            pass
+                    else:
                         await btn_el.click()
                         log_fn(f"  ✅ Clicked '{btn_text}'")
+                        next_clicked = True
                         await asyncio.sleep(4)
-                        break
+                    break
             except Exception:
                 pass
 
         published = False
-        for btn_text in ["Publish", "Publicar", "List", "Listar"]:
+        for btn_text in ["Publish", "Publicar", "List", "Listar", "Post", "Publicar"]:
             try:
                 btn_loc = page.get_by_role("button", name=btn_text)
                 if await btn_loc.count() > 0:
                     btn_el = await btn_loc.first.element_handle()
                     disabled = await btn_el.get_attribute("aria-disabled")
                     iters = 0
-                    while disabled == "true" and iters < 10:
+                    while disabled == "true" and iters < 15:
                         await asyncio.sleep(1)
                         disabled = await btn_el.get_attribute("aria-disabled")
                         iters += 1
+                    if disabled == "true":
+                        log_fn(f"  ⚠️ '{btn_text}' still disabled — cannot publish")
+                        continue
                     await btn_el.click()
                     log_fn(f"  ✅ Clicked '{btn_text}'")
                     await asyncio.sleep(6)
@@ -2745,7 +2957,7 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
             # This prevents FB's JS on the confirmation page from invalidating the
             # Playwright page context during the inter-group delay (browser crash fix).
             try:
-                await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+                await page.goto("about:blank", timeout=10000)
                 await asyncio.sleep(2)
             except Exception:
                 pass
@@ -2887,7 +3099,7 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
                 # Navigate to facebook.com to reset page state before next group.
                 # FB's post-submission page can become a dead context for subsequent navigations.
                 try:
-                    await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+                    await page.goto("about:blank", timeout=10000)
                     await asyncio.sleep(2)
                 except Exception:
                     pass
@@ -2898,7 +3110,7 @@ async def post_to_group_native(page, group, car, image_paths, caption, log_fn):
     log_fn("  ⚠️ Could not find Post button — group post may have failed")
     # Still navigate away to keep browser context alive for next group
     try:
-        await page.goto("https://www.facebook.com/", wait_until="domcontentloaded", timeout=15000)
+        await page.goto("about:blank", timeout=10000)
         await asyncio.sleep(2)
     except Exception:
         pass
