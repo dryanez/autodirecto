@@ -19,10 +19,5 @@ export default function sitemap() {
         priority: 0.7,
     }));
 
-    // GEO: llms.txt for AI crawlers
-    const geoPages = [
-        { url: `${baseUrl}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-    ];
-
-    return [...staticPages, ...vehiclePages, ...geoPages];
+    return [...staticPages, ...vehiclePages];
 }
